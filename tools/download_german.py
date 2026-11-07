@@ -18,6 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / "sources" / "tcgdex-de"
 IMAGES = ROOT / "sources" / "images-de"
 LOGOS = ROOT / "sources" / "logos-de"
+LOGOS_EN = ROOT / "sources" / "logos-en"  # englische TCGdex-Logos, gleiche Set-ids
 DONE = DATA / "fertig2.txt"  # start.py erkennt daran einen vollständigen Download (2 = mit Logos)
 API = "https://api.tcgdex.net/v2/de"
 
@@ -60,18 +61,23 @@ def main():
     except Exception as e:
         sys.exit(f"FEHLER: TCGdex nicht erreichbar ({e}). Internetverbindung prüfen.")
 
-    jobs, bases = [], {}
+    jobs, logo_jobs, bases = [], [], {}
     for i, s in enumerate(sets, 1):
         try:
             detail = cached_json(f"{API}/sets/{s['id']}", DATA / "sets" / f"{s['id']}.json")
         except Exception as e:
             print(f"Set {s['id']} übersprungen: {e}")
             continue
-        if detail.get("logo"):  # Set-Logo, in der Einkaufshilfe als Booster-Bild
-            jobs.append((detail["logo"] + ".webp", LOGOS / f"{s['id']}.webp"))
+        if detail.get("logo"):  # Set-Logo (Booster-Bild-Ersatz in Kartenliste und Einkaufshilfe)
+            logo_jobs.append((detail["logo"] + ".webp", LOGOS / f"{s['id']}.webp"))
         for c in detail.get("cards", []):
             if c.get("image"):
                 bases[s["id"]] = c["image"].rsplit("/", 1)[0]  # für große Bilder (high.webp) online
+        if s["id"] in bases:  # englisches TCGdex-Logo als Ersatz; fehlt es, gibt's 404 und kein Bild
+            en_base = bases[s["id"]].replace("/de/", "/en/", 1)
+            logo_jobs.append((en_base + "/logo.webp", LOGOS_EN / f"{s['id']}.webp"))
+        for c in detail.get("cards", []):
+            if c.get("image"):
                 name = re.sub(r"[^A-Za-z0-9_-]", "_", c["localId"]) + ".webp"
                 jobs.append((c["image"] + "/low.webp", IMAGES / s["id"] / name))
         if i % 5 == 0 or i == len(sets):
@@ -84,16 +90,20 @@ def main():
                 failed.append(err)
             if i % 100 == 0 or i == len(jobs):
                 print(f"Bilder {i}/{len(jobs)} …")
+    with ThreadPoolExecutor(8) as pool:  # Logos: fehlende sind normal, keine Fehler
+        list(pool.map(download_image, logo_jobs))
 
     IMAGES.mkdir(parents=True, exist_ok=True)
     (IMAGES / "fehler.txt").write_text("\n".join(failed), encoding="utf-8")
     if jobs and len(failed) == len(jobs):
         sys.exit("FEHLER: Keine Bilder geladen. Internetverbindung prüfen.")
-    logos = sorted(p.stem for p in LOGOS.glob("*.webp")) if LOGOS.is_dir() else []
+    stems = lambda d: sorted(p.stem for p in d.glob("*.webp")) if d.is_dir() else []
+    js = lambda v: json.dumps(v, separators=(",", ":"))
     (IMAGES / "available.js").write_text(  # für js/data.js
         "window.LOCAL_IMAGES_DE = true;\n"
-        f"window.TCGDEX_DE = {json.dumps(bases, separators=(',', ':'))};\n"
-        f"window.LOCAL_LOGOS_DE = {json.dumps(logos, separators=(',', ':'))};\n", encoding="utf-8")
+        f"window.TCGDEX_DE = {js(bases)};\n"
+        f"window.LOCAL_LOGOS_DE = {js(stems(LOGOS))};\n"
+        f"window.LOCAL_LOGOS_EN = {js(stems(LOGOS_EN))};\n", encoding="utf-8")
     DONE.write_text(time.strftime("%Y-%m-%d %H:%M"), encoding="utf-8")
     print(f"Fertig: {len(sets)} Sets, {len(jobs)} Bilder, {len(failed)} Fehler (siehe sources/images-de/fehler.txt).")
 
