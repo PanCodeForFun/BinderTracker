@@ -1,0 +1,41 @@
+POKÉMON BINDER TRACKER
+======================
+
+Starten
+-------
+Doppelklick auf "index.html". Läuft komplett offline im Browser, ohne Installation.
+
+Bedienung
+---------
+- Suche oben: deutscher oder englischer Name oder Nummer (z. B. "Glurak", "charizard", "6").
+  Enter springt direkt zur richtigen Binderseite, der Slot blinkt kurz.
+- "+ Karte wählen" (oder Klick aufs Bild): erst die Seltenheit antippen,
+  dann siehst du alle bekannten Karten dieses Pokémon in dieser Seltenheit
+  und tippst deine an. Ohne passende Karte: "Ohne Design übernehmen".
+  "Slot leeren" entfernt den Eintrag.
+- Kartenbilder werden aus dem Internet geladen (images.pokemontcg.io).
+  Ohne Internet siehst du stattdessen Set und Kartennummer.
+- "Statistik" oben zeigt, wie viele Karten du je Seltenheit hast.
+- Pfeiltasten links/rechts blättern, "/" springt in die Suche.
+- "Übersicht" zeigt alle Seiten eines Binders als kleine 4x4-Raster.
+- Oben links in jedem Slot steht Reihe/Spalte (1/1 = oben links, 4/4 = unten rechts).
+
+Binder-Aufteilung
+-----------------
+Binder 1: #1 bis #640 (Seite 1 bis 40)
+Binder 2: ab #641, beginnt wieder bei Seite 1 und wächst mit neuen Generationen.
+Ändern: in app.js die Zeile "BINDER1_CAPACITY".
+
+WICHTIG: Speichern
+------------------
+Deine Einträge liegen im Speicher des Browsers. Wenn du Browserdaten löschst
+oder einen anderen Browser nimmst, sind sie dort nicht. Deshalb regelmäßig
+"Backup speichern" drücken. Mit "Backup laden" holst du sie zurück
+(auch auf einem anderen Rechner).
+
+Neue Pokémon ergänzen
+---------------------
+In pokedex.js unten eine Zeile anhängen: [1026, "DeutscherName", "EnglishName", 10],
+Kartendaten liegen in cards.js (Quelle: PokemonTCG/pokemon-tcg-data auf GitHub).
+
+Datenquellen: PokeAPI (Namen, Pokémon-Bilder), PokemonTCG/pokemon-tcg-data (Karten).
