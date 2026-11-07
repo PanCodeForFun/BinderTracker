@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pokémon Binder Tracker</title>
 <link rel="stylesheet" href="style.css">
+<script>
+// Läuft start.py noch (Daten fehlen oder laden), zum Ladebildschirm wechseln.
+// Ohne start.py (Datei direkt geöffnet, anderer Webhoster) gibt es api/status nicht: nichts tun.
+if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store" })
+  .then(r => (r.ok ? r.json() : null))
+  .then(s => { if (s && s.state !== "done") location.replace("laden.html"); })
+  .catch(() => {});
+</script>
 </head>
 <body>
 <header class="top">
