@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pokémon Binder Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="ball" aria-hidden="true"></span>
+    <h1>Binder Tracker</h1>
+  </div>
+
+  <div class="tools">
+    <span id="status" class="status wait"></span>
+    <button id="btnStats" class="ghost">Statistik</button>
+    <button id="btnExport" class="ghost" title="Sammlung als Datei sichern">Backup speichern</button>
+    <label class="ghost filebtn" title="Gesicherte Datei wieder laden">
+      Backup laden<input id="fileImport" type="file" accept=".json,application/json" hidden>
+    </label>
+  </div>
+</header>
+
+<nav class="bar">
+  <div class="tabs" role="tablist">
+    <button class="tab" data-binder="1" role="tab">Binder 1</button>
+    <button class="tab" data-binder="2" role="tab">Binder 2</button>
+  </div>
+
+  <div class="views">
+    <button class="view" data-view="page">Seite</button>
+    <button class="view" data-view="overview">Übersicht</button>
+  </div>
+
+  <div class="pager">
+    <button id="prev" aria-label="Vorherige Seite">‹</button>
+    <label>Seite <select id="pageSelect"></select> <span id="pageCount"></span></label>
+    <button id="next" aria-label="Nächste Seite">›</button>
+  </div>
+
+  <div class="filter">
+    <label>Anzeigen
+      <select id="filter">
+        <option value="all">alle</option>
+        <option value="missing">nur fehlende</option>
+        <option value="have">nur vorhandene</option>
+      </select>
+    </label>
+  </div>
+</nav>
+
+<main>
+  <div class="search">
+    <input id="search" type="search" autocomplete="off" placeholder="Pokémon suchen (Deutsch, Englisch oder Nummer)…" aria-label="Pokémon suchen">
+    <ul id="suggest" class="suggest" hidden></ul>
+  </div>
+  <section id="pageView" class="page-wrap">
+    <div class="page-head"><h2 id="pageTitle"></h2><span id="pageRange"></span><span id="pageProgress" class="page-progress"></span></div>
+    <div id="grid" class="grid"></div>
+  </section>
+  <section id="overView" class="overview" hidden></section>
+</main>
+
+<div id="modalBack" class="modal-back" hidden></div>
+
+<div id="picker" class="modal picker" hidden role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+  <div class="modal-head">
+    <img id="pickerSprite" alt="">
+    <div><strong id="pickerTitle"></strong><div id="pickerSub" class="sub"></div></div>
+    <button id="pickerClose" class="x" aria-label="Schließen">×</button>
+  </div>
+  <div class="step-label">1. Seltenheit</div>
+  <div id="pickerOpts" class="rar-row"></div>
+  <div class="step-label">2. Kartendesign <span id="designCount" class="sub"></span></div>
+  <div id="designHint" class="design-hint"></div>
+  <div id="designs" class="designs"></div>
+  <div class="modal-foot">
+    <label class="note">Notiz <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …"></label>
+    <div class="foot-btns">
+      <button id="btnClear" class="ghost">Slot leeren</button>
+      <button id="btnNoDesign" class="ghost primary">Ohne Design übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<div id="statsModal" class="modal stats-modal" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+  <div class="modal-head"><strong id="statsTitle">Statistik</strong><button id="statsClose" class="x" aria-label="Schließen">×</button></div>
+  <div id="statsBody"></div>
+</div>
+
+<div id="confirm" class="confirm" hidden role="alertdialog">
+  <span id="confirmText"></span>
+  <button id="confirmYes" class="ghost primary">Laden</button>
+  <button id="confirmNo" class="ghost">Abbrechen</button>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="pokedex.js"></script>
+<script src="sprites.js"></script>
+<script src="cards.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
