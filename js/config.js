@@ -34,6 +34,9 @@ const RARITIES = [
   { id: "hyper",   label: "Hyper / Gold / Rainbow",    tier: "secret" },
 ];
 
+// Sets, die es nicht als Booster zu kaufen gibt (englischer Setname). Die Einkaufshilfe blendet sie aus.
+const NON_BOOSTER = /Promo|Trainer Kit|McDonald|Futsal|Energies|Classic Collection|Kalos Starter|Best of Game|Rumble/i;
+
 // Diese Kategorien gibt es auch als Reverse Holo.
 const REVERSE_FROM = ["normal", "holo"];
 

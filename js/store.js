@@ -45,29 +45,31 @@ const ownedCount = predicate => DEX.filter(p => collection[p.n] && predicate(p))
 // onStatus(kind, text), onChange() bei jeder Änderung von außen.
 async function connectLive(onStatus, onChange) {
   const db = await window.claude?.use?.("db");
-  if (!db) return onStatus("local", "Gespeichert in diesem Browser");
+  if (!db) return onStatus("local", t("savedLocal"));
   liveDb = db;
-  onStatus("wait", "Verbinde…");
-  const timer = setTimeout(() => onStatus("wait", "Online-Speicher noch nicht erreichbar"), 10000);
+  onStatus("wait", t("connecting"));
+  const timer = setTimeout(() => onStatus("wait", t("liveWait")), 10000);
   db.collection(DB_COLLECTION).onSnapshot(snap => {
     collection = cleanAll(snap.docs.map(d => [d.id, d.data()]));
     saveLocal();
-    if (!snap.metadata.fromCache) { clearTimeout(timer); onStatus("live", "Live gespeichert"); }
+    if (!snap.metadata.fromCache) { clearTimeout(timer); onStatus("live", t("live")); }
     onChange();
   }, () => {
     clearTimeout(timer);
     liveDb = null;
-    onStatus("err", "Online-Speicher nicht verfügbar");
+    onStatus("err", t("liveErr"));
   });
 }
 
 // ---------- Backup ----------
-const backupJson = () => JSON.stringify({ app: "pokebinder", version: 2, saved: new Date().toISOString(), collection }, null, 1);
+// Version 3: mit Wunschliste (js/wishlist.js). Ältere Backups haben keine, dann ist wishlist null.
+const backupJson = () =>
+  JSON.stringify({ app: "pokebinder", version: 3, saved: new Date().toISOString(), collection, wishlist: wishEntries() }, null, 1);
 
 function parseBackup(text) {
-  const c = JSON.parse(text)?.collection;
-  if (!c || typeof c !== "object") throw new Error("kein Backup");
-  return cleanAll(Object.entries(c));
+  const data = JSON.parse(text);
+  if (!data?.collection || typeof data.collection !== "object") throw new Error("kein Backup");
+  return { collection: cleanAll(Object.entries(data.collection)), wishlist: Array.isArray(data.wishlist) ? data.wishlist : null };
 }
 
 async function saveFile(filename, text) {
