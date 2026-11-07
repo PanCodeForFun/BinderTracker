@@ -137,40 +137,37 @@ function goTo(n) {
 }
 
 // ---------- Kartenauswahl ----------
-const pick = { n: null, rarity: null };
+const pick = { n: null };
 
 function openPicker(n) {
-  const p = BY_N.get(n);
-  Object.assign(pick, { n, rarity: owned(n)?.r || null });
+  const p = BY_N.get(n), e = owned(n);
+  pick.n = n;
   $("#pickerTitle").textContent = `${pad(n)} ${p.de}`;
   $("#pickerSub").textContent = `${p.en !== p.de ? p.en + " · " : ""}${cardsFor(n).length} Karten bekannt`;
   $("#pickerSprite").src = spriteUrl(n);
-  $("#pickerNote").value = owned(n)?.note || "";
+  $("#pickerNote").value = e?.note || "";
+  $("#asReverse").checked = e?.r === "reverse";
+  $("#noDesignRarity").value = e?.r || "normal";
   renderPicker();
   openModal("#picker");
   $("#designs").scrollTop = 0;
 }
 
+// Alle Karten, gruppiert nach Seltenheit (cardsFor ist schon so sortiert).
 function renderPicker() {
-  const { n, rarity } = pick, e = owned(n);
-  $("#pickerOpts").innerHTML = RARITIES.map(r => `
-    <button class="rchip${rarity === r.id ? " on" : ""}${e?.r === r.id ? " owned" : ""}" data-r="${r.id}" ${rarityStyle(r)} title="${esc(r.hint)}">
-      <i></i>${esc(r.label)}<small>${cardsOfRarity(n, r.id).length}</small></button>`).join("");
+  const e = owned(pick.n), cards = cardsFor(pick.n);
+  const counts = {};
+  cards.forEach(c => (counts[c.cat] = (counts[c.cat] || 0) + 1));
   $("#btnClear").disabled = !e;
-  $("#btnNoDesign").disabled = !rarity;
-
-  const cards = rarity ? cardsOfRarity(n, rarity) : [];
-  $("#designCount").textContent = rarity ? `${cards.length} Karten` : "";
-  $("#designHint").textContent =
-    !rarity ? "Wähle oben eine Seltenheit, dann siehst du alle passenden Karten."
-    : !cards.length ? "Für diese Seltenheit ist keine Karte von diesem Pokémon bekannt. Du kannst sie trotzdem ohne Design übernehmen."
-    : rarity === "reverse" ? "Reverse Holos gibt es von fast jeder normalen Karte. Wähle die Karte, die du als Reverse hast."
-    : "Tippe auf deine Karte.";
-  $("#designs").innerHTML = cards.map(c => `
-    <button class="design${e?.card === c.id && e.r === rarity ? " sel" : ""}" data-card="${esc(c.id)}">
+  $("#designs").innerHTML = !cards.length ? `<p class="sub">Keine Karten bekannt. Nutze „Ohne Design“.</p>` : cards.map((c, i) => {
+    const r = RARITY[c.cat];
+    const head = c.cat !== cards[i - 1]?.cat ? `<h4 class="group" ${rarityStyle(r)}><i></i>${esc(r.label)} <small>${counts[c.cat]}</small></h4>` : "";
+    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${rarityStyle(r)}>
+      <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span>${esc(c.rarity)}</div>
       ${cardImage(c, `<span>${esc(c.name)}</span>`)}
-      <div class="dmeta"><b>${esc(c.set)}</b><span>${esc(c.num)}/${esc(c.total)} · ${esc(c.date.slice(0, 4))}</span><span>${esc(c.rarity)}</span></div>
-    </button>`).join("");
+      <div class="dmeta"><b>${esc(c.set)}</b><span>${esc(c.num)}/${esc(c.total)} · ${esc(c.date.slice(0, 4))}</span></div>
+    </button>`;
+  }).join("");
 }
 
 async function commit(entry) {
@@ -181,7 +178,11 @@ async function commit(entry) {
   render();
   try { await done; } catch { setStatus("err", "Online-Speichern fehlgeschlagen"); }
 }
-const choose = card => commit({ r: pick.rarity, card, note: $("#pickerNote").value.trim() });
+function choose(cardId) {
+  const card = findCard(pick.n, cardId);
+  const asReverse = $("#asReverse").checked && REVERSE_FROM.includes(card.cat);
+  commit({ r: asReverse ? "reverse" : card.cat, card: card.id, note: $("#pickerNote").value.trim() });
+}
 
 // ---------- Statistik ----------
 function renderStats() {
@@ -240,6 +241,7 @@ const on = (sel, type, fn) => $(sel).addEventListener(type, fn);
 const onClosest = (sel, type, child, fn) => on(sel, type, e => { const el = e.target.closest(child); if (el) fn(el, e); });
 
 function bindEvents() {
+  $("#noDesignRarity").innerHTML = RARITIES.map(r => `<option value="${r.id}">${esc(r.label)}</option>`).join("");
   document.querySelectorAll(".tab").forEach(b => (b.onclick = () => { Object.assign(view, { binder: +b.dataset.binder, page: 1 }); render(); }));
   document.querySelectorAll(".view").forEach(b => (b.onclick = () => { view.mode = b.dataset.view; render(); }));
   on("#filter", "change", e => { view.filter = e.target.value; render(); });
@@ -249,9 +251,8 @@ function bindEvents() {
   onClosest("#overView", "click", ".mini", m => { Object.assign(view, { page: +m.dataset.page, mode: "page" }); render(); scrollTo({ top: 0 }); });
 
   onClosest("#grid", "click", ".slot[data-n]", (slot, e) => { if (e.target.closest(".rbtn, .vis")) openPicker(+slot.dataset.n); });
-  onClosest("#pickerOpts", "click", ".rchip", b => { pick.rarity = b.dataset.r; renderPicker(); $("#designs").scrollTop = 0; });
   onClosest("#designs", "click", ".design", d => choose(d.dataset.card));
-  on("#btnNoDesign", "click", () => choose(""));
+  on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });
   on("#btnStats", "click", () => { renderStats(); openModal("#statsModal"); });

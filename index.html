@@ -74,16 +74,14 @@
     <div><strong id="pickerTitle"></strong><div id="pickerSub" class="sub"></div></div>
     <button id="pickerClose" class="x" aria-label="Schließen">×</button>
   </div>
-  <div class="step-label">1. Seltenheit</div>
-  <div id="pickerOpts" class="rar-row"></div>
-  <div class="step-label">2. Kartendesign <span id="designCount" class="sub"></span></div>
-  <div id="designHint" class="design-hint"></div>
+  <label class="revtoggle"><input type="checkbox" id="asReverse"> Ich habe sie als Reverse Holo</label>
   <div id="designs" class="designs"></div>
   <div class="modal-foot">
     <label class="note">Notiz <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …"></label>
     <div class="foot-btns">
       <button id="btnClear" class="ghost">Slot leeren</button>
-      <button id="btnNoDesign" class="ghost primary">Ohne Design übernehmen</button>
+      <select id="noDesignRarity" aria-label="Seltenheit ohne Design"></select>
+      <button id="btnNoDesign" class="ghost">Ohne Design</button>
     </div>
   </div>
 </div>

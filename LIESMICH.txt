@@ -9,9 +9,11 @@ Bedienung
 ---------
 - Suche oben: deutscher oder englischer Name oder Nummer (z. B. "Glurak", "charizard", "6").
   Enter springt direkt zur richtigen Binderseite, der Slot blinkt kurz.
-- "+ Karte wählen" (oder Klick aufs Bild): erst die Seltenheit antippen,
-  dann siehst du alle bekannten Karten dieses Pokémon in dieser Seltenheit
-  und tippst deine an. Ohne passende Karte: "Ohne Design übernehmen".
+- "+ Karte wählen" (oder Klick aufs Bild): Du siehst alle bekannten Karten
+  dieses Pokémon, gruppiert nach Seltenheit und nach Erscheinungsjahr sortiert.
+  Über jeder Karte steht ihr Seltenheitszeichen (● ◆ ★ ★★ ★★★ ✦ P).
+  Tippe deine Karte an. Als Reverse Holo vorher den Haken setzen.
+  Ohne passende Karte: Seltenheit unten wählen und "Ohne Design".
   "Slot leeren" entfernt den Eintrag.
 - Kartenbilder werden aus dem Internet geladen (images.pokemontcg.io).
   Ohne Internet siehst du stattdessen Set und Kartennummer.
