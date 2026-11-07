@@ -12,7 +12,7 @@ Bedienung
 - "+ Karte wählen" (oder Klick aufs Bild): Du siehst alle bekannten Karten
   dieses Pokémon, gruppiert nach Seltenheit und nach Erscheinungsjahr sortiert.
   Über jeder Karte steht ihr Seltenheitszeichen (● ◆ ★ ★★ ★★★ ✦ P).
-  Tippe deine Karte an. Als Reverse Holo vorher den Haken setzen.
+  Tippe deine Karte an. Hast du sie als Reverse Holo, tippe auf "Reverse".
   Ohne passende Karte: Seltenheit unten wählen und "Ohne Design".
   "Slot leeren" entfernt den Eintrag.
 - Kartenbilder werden aus dem Internet geladen (images.pokemontcg.io).

@@ -147,7 +147,6 @@ function openPicker(n) {
   $("#pickerSub").textContent = `${p.en !== p.de ? p.en + " · " : ""}${cardsFor(n).length} Karten bekannt`;
   $("#pickerSprite").src = spriteUrl(n);
   $("#pickerNote").value = e?.note || "";
-  $("#asReverse").checked = e?.r === "reverse";
   $("#noDesignRarity").value = e?.r || "normal";
   renderPicker();
   openModal("#picker");
@@ -164,7 +163,8 @@ function renderPicker() {
     const t = TIER[tierOf(c)];
     const head = i && tierOf(cards[i - 1]) === t.id ? "" : `<h4 class="group" ${colorStyle(t)}><i></i>${esc(t.label)} <small>${counts[t.id]}</small></h4>`;
     return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${colorStyle(t)}>
-      <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span>${esc(c.rarity)}</div>
+      <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span><span class="rname">${esc(c.rarity === "None" ? "ohne Angabe" : c.rarity)}</span>${
+        REVERSE_FROM.includes(c.cat) ? `<span class="rev${e?.card === c.id && e.r === "reverse" ? " on" : ""}" data-rev title="Diese Karte als Reverse Holo">Reverse</span>` : ""}</div>
       ${cardImage(c, `<span>${esc(c.name)}</span>`)}
       <div class="dmeta"><b>${esc(c.set)}</b><span>${esc(c.num)}/${esc(c.total)} · ${esc(c.date.slice(0, 4))}</span></div>
     </button>`;
@@ -179,9 +179,9 @@ async function commit(entry) {
   render();
   try { await done; } catch { setStatus("err", "Online-Speichern fehlgeschlagen"); }
 }
-function choose(cardId) {
+// Klick auf die Karte wählt sie, Klick auf „Reverse“ wählt sie als Reverse Holo.
+function choose(cardId, asReverse) {
   const card = findCard(pick.n, cardId);
-  const asReverse = $("#asReverse").checked && REVERSE_FROM.includes(card.cat);
   commit({ r: asReverse ? "reverse" : card.cat, card: card.id, note: $("#pickerNote").value.trim() });
 }
 
@@ -251,7 +251,7 @@ function bindEvents() {
   onClosest("#overView", "click", ".mini", m => { Object.assign(view, { page: +m.dataset.page, mode: "page" }); render(); scrollTo({ top: 0 }); });
 
   onClosest("#grid", "click", ".slot[data-n]", (slot, e) => { if (e.target.closest(".rbtn, .vis")) openPicker(+slot.dataset.n); });
-  onClosest("#designs", "click", ".design", d => choose(d.dataset.card));
+  onClosest("#designs", "click", ".design", (d, e) => choose(d.dataset.card, !!e.target.closest("[data-rev]")));
   on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });
