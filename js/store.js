@@ -64,7 +64,7 @@ async function connectLive(onStatus, onChange) {
 // ---------- Backup ----------
 // Version 3: mit Wunschliste (js/wishlist.js). Ältere Backups haben keine, dann ist wishlist null.
 const backupJson = () =>
-  JSON.stringify({ app: "pokebinder", version: 3, saved: new Date().toISOString(), collection, wishlist: [...wishlist] }, null, 1);
+  JSON.stringify({ app: "pokebinder", version: 3, saved: new Date().toISOString(), collection, wishlist: wishEntries() }, null, 1);
 
 function parseBackup(text) {
   const data = JSON.parse(text);
