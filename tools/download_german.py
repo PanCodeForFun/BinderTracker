@@ -70,7 +70,7 @@ def main():
             if c.get("image"):
                 name = re.sub(r"[^A-Za-z0-9_-]", "_", c["localId"]) + ".webp"
                 jobs.append((c["image"] + "/low.webp", IMAGES / s["id"] / name))
-        if i % 25 == 0:
+        if i % 5 == 0:
             print(f"Sets {i}/{len(sets)} …")
 
     failed = []
@@ -78,7 +78,7 @@ def main():
         for i, err in enumerate(pool.map(download_image, jobs), 1):
             if err:
                 failed.append(err)
-            if i % 500 == 0:
+            if i % 100 == 0:
                 print(f"Bilder {i}/{len(jobs)} …")
 
     IMAGES.mkdir(parents=True, exist_ok=True)
