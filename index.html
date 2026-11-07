@@ -34,11 +34,6 @@
     <button class="view" data-view="overview">Übersicht</button>
   </div>
 
-  <div class="pager">
-    <button id="prev" aria-label="Vorherige Seite">‹</button>
-    <label>Seite <select id="pageSelect"></select> <span id="pageCount"></span></label>
-    <button id="next" aria-label="Nächste Seite">›</button>
-  </div>
 
   <div class="filter">
     <label>Anzeigen
@@ -57,7 +52,15 @@
     <ul id="suggest" class="suggest" hidden></ul>
   </div>
   <section id="pageView" class="page-wrap">
-    <div class="page-head"><h2 id="pageTitle"></h2><span id="pageRange"></span><span id="pageProgress" class="page-progress"></span></div>
+    <div class="page-head">
+      <div class="page-name"><h2 id="pageTitle"></h2><span id="pageRange"></span></div>
+      <div class="pager">
+        <button id="prev" aria-label="Vorherige Seite">‹</button>
+        <label>Seite <select id="pageSelect"></select> <span id="pageCount"></span></label>
+        <button id="next" aria-label="Nächste Seite">›</button>
+      </div>
+      <span id="pageProgress" class="page-progress"></span>
+    </div>
     <div id="grid" class="grid"></div>
   </section>
   <section id="overView" class="overview" hidden></section>

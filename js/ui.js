@@ -110,7 +110,6 @@ function render() {
   $("#pageCount").textContent = `von ${pages}`;
   $("#prev").disabled = view.binder === 1 && view.page === 1;
   $("#next").disabled = view.binder === 2 && view.page === pages;
-  $(".pager").style.visibility = view.mode === "page" ? "visible" : "hidden";
   $("#pageView").hidden = view.mode !== "page";
   $("#overView").hidden = view.mode !== "overview";
   (view.mode === "page" ? renderPage : renderOverview)();
