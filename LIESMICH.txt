@@ -24,7 +24,7 @@ Binder-Aufteilung
 -----------------
 Binder 1: #1 bis #640 (Seite 1 bis 40)
 Binder 2: ab #641, beginnt wieder bei Seite 1 und wächst mit neuen Generationen.
-Ändern: in app.js die Zeile "BINDER1_CAPACITY".
+Ändern: in js/config.js bei "binder1Size".
 
 WICHTIG: Speichern
 ------------------
@@ -33,9 +33,15 @@ oder einen anderen Browser nimmst, sind sie dort nicht. Deshalb regelmäßig
 "Backup speichern" drücken. Mit "Backup laden" holst du sie zurück
 (auch auf einem anderen Rechner).
 
-Neue Pokémon ergänzen
----------------------
-In pokedex.js unten eine Zeile anhängen: [1026, "DeutscherName", "EnglishName", 10],
-Kartendaten liegen in cards.js (Quelle: PokemonTCG/pokemon-tcg-data auf GitHub).
+Aufbau
+------
+index.html, style.css   Seite und Aussehen
+js/config.js            Einstellungen: Binder-Größe, Seltenheiten, Farben
+js/data.js              Pokédex, Kartendaten, Binder-Positionen, Suche
+js/store.js             Speichern, Online-Sync, Backup
+js/ui.js                Oberfläche und Bedienung
+data/                   erzeugte Daten (nicht von Hand ändern)
+tools/build_data.py     erzeugt data/ neu, z. B. wenn neue Sets erscheinen:
+                        python tools/build_data.py
 
 Datenquellen: PokeAPI (Namen, Pokémon-Bilder), PokemonTCG/pokemon-tcg-data (Karten).
