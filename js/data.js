@@ -27,13 +27,15 @@ function imageSources(setId, num, img, deSet, deNum) {
   return { srcs: byLang([de, en, online], [en, de, online]), big: byLang([deBig, enBig], [enBig, deBig]) };
 }
 
-// Set-Logo (Booster-Bild in Kartenliste und Einkaufshilfe): lokal deutsch/englisch, sonst online.
+// Set-Logo (Booster-Bild in Kartenliste und Einkaufshilfe): TCGdex deutsch, TCGdex englisch,
+// pokemontcg.io englisch (nur lokal: online liefert es für unbekannte Sets eine Kartenrückseite).
 function logoSources(i) {
   const [setId, , , , , , deSet] = TCG_SETS[i];
   const de = window.LOCAL_LOGOS_DE?.includes(deSet) ? `sources/logos-de/${deSet}.webp` : "";
-  const en = window.LOCAL_IMAGES ? `images/logos/${setId}.png` : "";
-  const online = `${IMG_HOST}${setId}/logo.png`;
-  return (LANG === "en" ? [en, online, de] : [de, en, online]).filter(Boolean);
+  const tcgdexEn = window.LOCAL_LOGOS_EN?.includes(deSet) ? `sources/logos-en/${deSet}.webp`
+    : window.TCGDEX_DE?.[deSet] ? `${window.TCGDEX_DE[deSet].replace("/de/", "/en/")}/logo.webp` : "";
+  const ptcg = window.LOCAL_IMAGES ? `images/logos/${setId}.png` : "";
+  return (LANG === "en" ? [tcgdexEn, ptcg, de] : [de, tcgdexEn, ptcg]).filter(Boolean);
 }
 
 // Alle Karten eines Pokémon, nach Stufe und dann Erscheinungsdatum.
