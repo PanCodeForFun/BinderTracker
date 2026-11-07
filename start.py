@@ -1,12 +1,13 @@
 """Startet den Binder Tracker lokal unter http://127.0.0.1:8000.
 
-Aufruf:  python start.py [Port]   (unter Windows auch Doppelklick auf start.bat)
+Aufruf:  python start.py [Port] [--debug-delay SEK]   (Windows: start.bat, start-debug.bat)
 
 Der Server startet sofort und öffnet im Browser den Ladebildschirm (laden.html).
 Fehlen Daten, laufen die Download-Skripte im Hintergrund; der Fortschritt steht
 unter /api/status. Klappt ein Download nicht, zeigt die Seite den Fehler und das
 Skript beendet sich mit Exit-Code 1.
 """
+import argparse
 import functools
 import http.server
 import json
@@ -121,8 +122,21 @@ def ensure_data():
         with LOCK:
             step["state"], step["fraction"], step["detail"] = "ok", 1.0, "fertig"
             update_percent()
+
+
+def debug_hold(seconds):
+    """Hält den Ladebildschirm bei 99 %, um die Animation anzusehen (--debug-delay)."""
     with LOCK:
-        STATUS["state"] = "done"
+        step = {"label": "Debug", "needed": True, "state": "running", "fraction": 0.99, "detail": "", "done": 0, "total": 0}
+        STATUS["steps"].append(step)
+    for left in range(seconds, 0, -1):
+        with LOCK:
+            STATUS["percent"], STATUS["message"], step["detail"] = 99.0, f"Debug: warte {left} s", f"noch {left} s"
+        time.sleep(1)
+    with LOCK:
+        step["state"], step["fraction"], step["detail"] = "ok", 1.0, "fertig"
+        STATUS.pop("message", None)
+        update_percent()
 
 
 def card_images(count=24):
@@ -175,7 +189,12 @@ class Server(http.server.ThreadingHTTPServer):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
+    ap = argparse.ArgumentParser(description="Startet den Binder Tracker lokal.")
+    ap.add_argument("port", nargs="?", type=int, default=PORT, help=f"Port (Standard {PORT})")
+    ap.add_argument("--debug-delay", type=int, default=0, metavar="SEK",
+                    help="Ladebildschirm nach den Prüfungen so viele Sekunden bei 99 %% halten")
+    args = ap.parse_args()
+    port = args.port
     handler = functools.partial(Handler, directory=str(ROOT))
     try:
         server = Server((HOST, port), handler)
@@ -195,6 +214,11 @@ def main():
             time.sleep(15)  # Ladebildschirm kann den Fehler noch abholen
             server.shutdown()
             sys.exit(1)
+        if args.debug_delay > 0:
+            print(f"Debug: halte den Ladebildschirm {args.debug_delay} s bei 99 %")
+            debug_hold(args.debug_delay)
+        with LOCK:
+            STATUS["state"] = "done"
         print("Alle Daten bereit.")
         while True:
             time.sleep(3600)

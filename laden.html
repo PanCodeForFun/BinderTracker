@@ -370,7 +370,7 @@ body.leaving main, body.leaving .stage { transition: opacity .5s; opacity: 0; }
       return;
     }
     $("phase").textContent = running ? "Lade" : "Prüfe Daten";
-    $("label").textContent = running ? running.label + " werden geladen" : "Prüfe vorhandene Daten …";
+    $("label").textContent = s.message || (running ? running.label + " werden geladen" : "Prüfe vorhandene Daten …");
     $("detail").textContent = running ? running.detail : " ";
     setTimeout(poll, 400);
   }

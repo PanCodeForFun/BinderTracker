@@ -45,19 +45,19 @@ const ownedCount = predicate => DEX.filter(p => collection[p.n] && predicate(p))
 // onStatus(kind, text), onChange() bei jeder Änderung von außen.
 async function connectLive(onStatus, onChange) {
   const db = await window.claude?.use?.("db");
-  if (!db) return onStatus("local", "Gespeichert in diesem Browser");
+  if (!db) return onStatus("local", t("savedLocal"));
   liveDb = db;
-  onStatus("wait", "Verbinde…");
-  const timer = setTimeout(() => onStatus("wait", "Online-Speicher noch nicht erreichbar"), 10000);
+  onStatus("wait", t("connecting"));
+  const timer = setTimeout(() => onStatus("wait", t("liveWait")), 10000);
   db.collection(DB_COLLECTION).onSnapshot(snap => {
     collection = cleanAll(snap.docs.map(d => [d.id, d.data()]));
     saveLocal();
-    if (!snap.metadata.fromCache) { clearTimeout(timer); onStatus("live", "Live gespeichert"); }
+    if (!snap.metadata.fromCache) { clearTimeout(timer); onStatus("live", t("live")); }
     onChange();
   }, () => {
     clearTimeout(timer);
     liveDb = null;
-    onStatus("err", "Online-Speicher nicht verfügbar");
+    onStatus("err", t("liveErr"));
   });
 }
 

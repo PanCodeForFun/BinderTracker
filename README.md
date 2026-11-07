@@ -30,9 +30,9 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 ## Usage
 
-Run `python start.py` (on Windows: double-click `start.bat`). It checks that the card images and the German card data are on disk, downloads anything missing, stops with an error if the download fails, and then serves the app at http://127.0.0.1:8000. Opening `index.html` directly still works too. The collection is saved in the browser's local storage, so use **Backup speichern** regularly.
+Run `python start.py` (on Windows: double-click `start.bat`). It checks that the card images and the German card data are on disk, downloads anything missing, stops with an error if the download fails, and then serves the app at http://127.0.0.1:8000. `python start.py 8001` uses another port. `start-debug.bat` (`python start.py --debug-delay 120`) always shows the loading screen and holds it at 99 % for 120 seconds, to look at the animation. Opening `index.html` directly still works too. The collection is saved in the browser's local storage, so use **Backup speichern** regularly.
 
-The interface is in German.
+The interface and card names are in German by default. A language menu in the header switches to English (Japanese is planned); the choice is saved in the browser. In German mode the card picker shows German card and set names and the German card image where available, falling back to English.
 
 ## Project structure
 
@@ -41,12 +41,13 @@ The interface is in German.
 | `js/config.js` | Settings: binder size, rarity tiers, colors, symbols |
 | `js/data.js` | Pokédex, card lookup, binder positions, search |
 | `js/store.js` | Saving, optional online sync, backup |
+| `js/i18n.js` | Language menu and UI texts (German, English) |
 | `js/ui.js` | User interface |
 | `data/` | Generated data files, do not edit by hand |
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
 | `tools/download_german.py` | Downloads German set data and card images from TCGdex to `sources/` |
-| `start.py`, `start.bat`, `laden.html` | Checks/downloads data (with a loading screen in the browser), then serves the app on 127.0.0.1 |
+| `start.py`, `start.bat`, `start-debug.bat`, `laden.html` | Checks/downloads data (with a loading screen in the browser), then serves the app on 127.0.0.1 |
 
 ### Offline card images
 

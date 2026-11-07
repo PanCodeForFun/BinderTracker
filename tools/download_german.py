@@ -85,6 +85,7 @@ def main():
     (IMAGES / "fehler.txt").write_text("\n".join(failed), encoding="utf-8")
     if jobs and len(failed) == len(jobs):
         sys.exit("FEHLER: Keine Bilder geladen. Internetverbindung prüfen.")
+    (IMAGES / "available.js").write_text("window.LOCAL_IMAGES_DE = true;\n", encoding="utf-8")  # für js/data.js
     DONE.write_text(time.strftime("%Y-%m-%d %H:%M"), encoding="utf-8")
     print(f"Fertig: {len(sets)} Sets, {len(jobs)} Bilder, {len(failed)} Fehler (siehe sources/images-de/fehler.txt).")
 
