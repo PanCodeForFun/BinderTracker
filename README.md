@@ -17,7 +17,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **Reverse Holo** option on every normal and holo card.
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
 - **Statistics** for collection progress per binder and per rarity tier.
-- **Wishlist** with three tabs: the **card list** shows all ~17,400 cards (newest set first, then rarest; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets from your wished cards, with promos and similar listed separately as singles.
+- **Wishlist** with three tabs: the **card list** shows all ~17,400 cards booster by booster (newest first, rarest first within a set, with a separator and set logo per booster, a "Nächstes Booster" button and a dropdown to jump to any booster; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets (with set logo) from your wished cards, with promos and similar listed separately as singles. Click any card image there to see it full size (German or English high-resolution scan when online); ×, Escape or Back closes it.
 - **Backup** of the collection and wishlist as a JSON file, which can be restored on any device.
 - Works fully offline when opened locally. Names, sprites and card data ship with the app; card images can be downloaded once (see below).
 
@@ -50,7 +50,7 @@ The interface and card names are in German by default. A language menu in the he
 | `data/` | Generated data files, do not edit by hand |
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
-| `tools/download_german.py` | Downloads German set data and card images from TCGdex to `sources/` |
+| `tools/download_german.py` | Downloads German set data, card images and set logos from TCGdex to `sources/` |
 | `start.py`, `start.bat`, `start-debug.bat`, `laden.html` | Checks/downloads data (with a loading screen in the browser), then serves the app on 127.0.0.1 |
 
 ### Offline card images

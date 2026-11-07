@@ -51,6 +51,31 @@ function cardImage(card, extra = "") {
   </div>`;
 }
 
+// Bild mit Ersatzquellen (z. B. Set-Logos): srcs der Reihe nach, sonst verschwindet es.
+function imgChain(srcs, attrs = "") {
+  const [src, ...rest] = srcs;
+  return `<img src="${esc(src)}" data-fallback="${esc(rest.join("|"))}" ${attrs} loading="lazy" onerror="cardImageFailed(this)">`;
+}
+
+// ---------- Vollansicht einer Karte (×, Escape, Zurück oder Klick daneben schließt) ----------
+function openZoom(card) {
+  if (!card) return;
+  $("#zoomBox").innerHTML = imgChain([...card.big, ...card.srcs], `alt="${esc(card.name)}"`) +
+    `<figcaption><b>${esc(card.name)}</b> · ${esc(card.set)} · ${esc(card.num)}/${esc(card.total)}</figcaption>`;
+  $("#zoomBox img").loading = "eager";
+  $("#zoom").hidden = false;
+  document.body.classList.add("modal-open");
+  history.pushState({ zoom: true }, "");
+}
+function closeZoom(viaHistory = false) {
+  if ($("#zoom").hidden) return false;
+  $("#zoom").hidden = true;
+  document.body.classList.remove("modal-open");
+  if (!viaHistory && history.state?.zoom) history.back();
+  return true;
+}
+addEventListener("popstate", () => closeZoom(true));
+
 function cardImageFailed(img) {
   if (img.dataset.fallback) {
     const [next, ...rest] = img.dataset.fallback.split("|");
@@ -287,6 +312,7 @@ function bindEvents() {
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });
   document.querySelectorAll(".modal .x, #modalBack").forEach(el => (el.onclick = closeModals));
+  on("#zoom", "click", e => { if (!e.target.closest("img")) closeZoom(); });
 
   on("#search", "input", renderSuggest);
   on("#search", "focus", e => e.target.value && renderSuggest());
@@ -304,7 +330,7 @@ function bindEvents() {
   document.addEventListener("click", e => { if (!e.target.closest(".search")) $("#suggest").hidden = true; });
 
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") return closeModals();
+    if (e.key === "Escape") return closeZoom() || closeModals();
     if (e.target.matches("input, select") || document.body.classList.contains("modal-open") || view.mode !== "page") return;
     if (e.key === "ArrowLeft") turnPage(-1);
     if (e.key === "ArrowRight") turnPage(1);
