@@ -12,6 +12,9 @@ try { LANG = LANGS.find(l => l.id === localStorage.getItem(LANG_KEY) && !l.disab
 const STRINGS = {
   de: {
     title: "Pokémon Binder Tracker",
+    binder: "Binder", data: "Daten", backup: "Backup", storage: "Speicherort",
+    languageHint: "Sprache der Oberfläche, Namen und Kartenbilder.",
+    backupHint: "Sammlung und Wunschliste als Datei sichern oder wiederherstellen. Regelmäßig speichern!",
     stats: "Statistik", backupSave: "Backup speichern", backupSaveTip: "Sammlung als Datei sichern",
     backupLoad: "Backup laden", backupLoadTip: "Gesicherte Datei wieder laden", language: "Sprache",
     page: "Seite", overview: "Übersicht", show: "Anzeigen", all: "alle", onlyMissing: "nur fehlende", onlyHave: "nur vorhandene",
@@ -42,6 +45,9 @@ const STRINGS = {
   },
   en: {
     title: "Pokémon Binder Tracker",
+    binder: "Binder", data: "Data", backup: "Backup", storage: "Storage",
+    languageHint: "Language of the interface, names and card images.",
+    backupHint: "Save or restore your collection and wishlist as a file. Save regularly!",
     stats: "Statistics", backupSave: "Save backup", backupSaveTip: "Save the collection as a file",
     backupLoad: "Load backup", backupLoadTip: "Restore a saved file", language: "Language",
     page: "Page", overview: "Overview", show: "Show", all: "all", onlyMissing: "missing only", onlyHave: "owned only",

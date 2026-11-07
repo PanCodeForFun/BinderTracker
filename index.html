@@ -21,18 +21,17 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
     <h1>Binder Tracker</h1>
   </div>
 
-  <div class="tools">
-    <span id="status" class="status wait"></span>
-    <select id="lang" class="lang" data-i18n-tip="language"></select>
-    <button id="btnStats" class="ghost" data-i18n="stats">Statistik</button>
-    <button id="btnExport" class="ghost" data-i18n="backupSave" data-i18n-tip="backupSaveTip">Backup speichern</button>
-    <label class="ghost" data-i18n-tip="backupLoadTip">
-      <span data-i18n="backupLoad">Backup laden</span><input id="fileImport" type="file" accept=".json,application/json" hidden>
-    </label>
-  </div>
+  <nav class="mainnav" aria-label="Bereiche">
+    <button class="sect" data-mode="page" data-i18n="binder">Binder</button>
+    <button class="sect" data-mode="wish" data-i18n="wish">Wunschliste</button>
+    <button class="sect" data-mode="stats" data-i18n="stats">Statistik</button>
+    <button class="sect" data-mode="data" data-i18n="data">Daten</button>
+  </nav>
+
+  <span id="status" class="status wait"></span>
 </header>
 
-<nav class="bar">
+<nav id="binderBar" class="bar">
   <div class="tabs" role="tablist">
     <button class="tab" data-binder="1" role="tab">Binder 1</button>
     <button class="tab" data-binder="2" role="tab">Binder 2</button>
@@ -41,9 +40,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   <div class="views">
     <button class="view" data-view="page" data-i18n="page">Seite</button>
     <button class="view" data-view="overview" data-i18n="overview">Übersicht</button>
-    <button class="view" data-view="wish" data-i18n="wish">Wunschliste</button>
   </div>
-
 
   <div class="filter">
     <label><span data-i18n="show">Anzeigen</span>
@@ -57,7 +54,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
 </nav>
 
 <main>
-  <div class="search">
+  <div id="binderSearch" class="search">
     <input id="search" type="search" autocomplete="off" placeholder="Pokémon suchen (Deutsch, Englisch oder Nummer)…" data-i18n-ph="searchPh" data-i18n-tip="searchLabel">
     <ul id="suggest" class="suggest" hidden></ul>
   </div>
@@ -89,6 +86,29 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
       <div id="wlSide"></div>
     </div>
   </section>
+  <section id="statsView" class="panel-view" hidden>
+    <h2 data-i18n="stats">Statistik</h2>
+    <div id="statsBody"></div>
+  </section>
+  <section id="dataView" class="panel-view" hidden>
+    <h2 data-i18n="data">Daten</h2>
+    <div class="data-row">
+      <div><b data-i18n="language">Sprache</b><div class="sub" data-i18n="languageHint"></div></div>
+      <select id="lang" class="lang" data-i18n-tip="language"></select>
+    </div>
+    <div class="data-row">
+      <div><b data-i18n="backup">Backup</b><div class="sub" data-i18n="backupHint"></div></div>
+      <div class="foot-btns">
+        <button id="btnExport" class="ghost primary" data-i18n="backupSave" data-i18n-tip="backupSaveTip">Backup speichern</button>
+        <label class="ghost" data-i18n-tip="backupLoadTip">
+          <span data-i18n="backupLoad">Backup laden</span><input id="fileImport" type="file" accept=".json,application/json" hidden>
+        </label>
+      </div>
+    </div>
+    <div class="data-row">
+      <div><b data-i18n="storage">Speicherort</b><div class="sub" id="statusText"></div></div>
+    </div>
+  </section>
 </main>
 
 <div id="modalBack" class="modal-back" hidden></div>
@@ -110,10 +130,6 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   </div>
 </div>
 
-<div id="statsModal" class="modal stats-modal" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-  <div class="modal-head"><strong id="statsTitle" data-i18n="stats">Statistik</strong><button id="statsClose" class="x" data-i18n-tip="close">×</button></div>
-  <div id="statsBody"></div>
-</div>
 
 <div id="confirm" class="confirm" hidden role="alertdialog">
   <span id="confirmText"></span>
