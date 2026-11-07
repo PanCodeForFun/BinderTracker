@@ -11,7 +11,7 @@ const spriteUrl = n => SPRITES[n] || "";
 const IMG_HOST = "https://images.pokemontcg.io/";
 const cardCache = new Map();
 
-// Alle Karten eines Pokémon, nach Seltenheit und dann Erscheinungsdatum.
+// Alle Karten eines Pokémon, nach Stufe und dann Erscheinungsdatum.
 function cardsFor(n) {
   if (!cardCache.has(n)) {
     const cards = (TCG_CARDS[n] || []).map(([setIdx, num, cat, name, rarityIdx, img]) => {
@@ -19,7 +19,7 @@ function cardsFor(n) {
       const small = img?.startsWith("http") ? img : IMG_HOST + (img || `${setId}/${num}.png`);
       return { id: `${setId}-${num}`, set, date, total, num, cat, name, rarity: TCG_RARITY_NAMES[rarityIdx], small, setIdx };
     });
-    cards.sort((a, b) => RARITY[a.cat].rank - RARITY[b.cat].rank || a.setIdx - b.setIdx || a.num.localeCompare(b.num, "en", { numeric: true }));
+    cards.sort((a, b) => RARITY[a.cat].tierRank - RARITY[b.cat].tierRank || a.setIdx - b.setIdx || a.num.localeCompare(b.num, "en", { numeric: true }));
     cardCache.set(n, cards);
   }
   return cardCache.get(n);
