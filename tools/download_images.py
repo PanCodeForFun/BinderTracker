@@ -65,7 +65,7 @@ def main():
             counts[key] += 1
             if key == "Fehler":
                 print(result)
-            if i % 500 == 0:
+            if i % 100 == 0:
                 print(f"{i}/{len(jobs)} …")
 
     if jobs and counts["Fehler"] == len(jobs):
