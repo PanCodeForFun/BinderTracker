@@ -62,12 +62,14 @@ async function connectLive(onStatus, onChange) {
 }
 
 // ---------- Backup ----------
-const backupJson = () => JSON.stringify({ app: "pokebinder", version: 2, saved: new Date().toISOString(), collection }, null, 1);
+// Version 3: mit Wunschliste (js/wishlist.js). Ältere Backups haben keine, dann ist wishlist null.
+const backupJson = () =>
+  JSON.stringify({ app: "pokebinder", version: 3, saved: new Date().toISOString(), collection, wishlist: [...wishlist] }, null, 1);
 
 function parseBackup(text) {
-  const c = JSON.parse(text)?.collection;
-  if (!c || typeof c !== "object") throw new Error("kein Backup");
-  return cleanAll(Object.entries(c));
+  const data = JSON.parse(text);
+  if (!data?.collection || typeof data.collection !== "object") throw new Error("kein Backup");
+  return { collection: cleanAll(Object.entries(data.collection)), wishlist: Array.isArray(data.wishlist) ? data.wishlist : null };
 }
 
 async function saveFile(filename, text) {

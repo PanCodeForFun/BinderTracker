@@ -125,7 +125,8 @@ function render() {
   $("#next").disabled = view.binder === 2 && view.page === pages;
   $("#pageView").hidden = view.mode !== "page";
   $("#overView").hidden = view.mode !== "overview";
-  (view.mode === "page" ? renderPage : renderOverview)();
+  $("#wishView").hidden = view.mode !== "wish";
+  ({ page: renderPage, overview: renderOverview, wish: renderWishView })[view.mode]();
   if (!$("#statsModal").hidden) renderStats();
   if (pick.n) renderPicker();
   writeHash();
@@ -188,6 +189,7 @@ async function commit(entry) {
   if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(t("rarerHint", { a: prev.label, b: RARITY[entry.r].label }));
   closeModals();
   const done = saveEntry(n, entry);
+  if (entry?.card && isWished(entry.card)) setWish(entry.card, false).catch(() => setStatus("err", t("saveFailed")));
   render();
   try { await done; } catch { setStatus("err", t("saveFailed")); }
 }
@@ -238,13 +240,15 @@ function pickSuggestion(i) {
   goTo(p.n);
 }
 
-// ---------- Adresse (#b1-s3, #b2-s1-ue) ----------
+// ---------- Adresse (#b1-s3, #b2-s1-ue Übersicht, #b1-s1-wl Wunschliste) ----------
+const HASH_MODES = { "": "page", "-ue": "overview", "-wl": "wish" };
 function readHash() {
-  const m = location.hash.match(/^#b([12])-s(\d+)(-ue)?$/);
-  if (m) Object.assign(view, { binder: +m[1], page: +m[2], mode: m[3] ? "overview" : "page" });
+  const m = location.hash.match(/^#b([12])-s(\d+)(-ue|-wl)?$/);
+  if (m) Object.assign(view, { binder: +m[1], page: +m[2], mode: HASH_MODES[m[3] || ""] });
 }
 function writeHash() {
-  const h = `#b${view.binder}-s${view.page}${view.mode === "overview" ? "-ue" : ""}`;
+  const suffix = Object.keys(HASH_MODES).find(k => HASH_MODES[k] === view.mode);
+  const h = `#b${view.binder}-s${view.page}${suffix}`;
   if (location.hash !== h) try { history.replaceState(null, "", h); } catch { /* egal */ }
 }
 
@@ -310,8 +314,9 @@ function bindEvents() {
     if (!file) return;
     try {
       const next = parseBackup(await file.text());
-      askConfirm(t("backupAsk", { n: Object.keys(next).length }), async () => {
-        await replaceCollection(next).catch(() => setStatus("err", t("saveFailed")));
+      askConfirm(t("backupAsk", { n: Object.keys(next.collection).length }), async () => {
+        await replaceCollection(next.collection).catch(() => setStatus("err", t("saveFailed")));
+        if (next.wishlist) await replaceWishlist(next.wishlist).catch(() => setStatus("err", t("saveFailed")));
         render();
         toast(t("backupLoaded"));
       });
@@ -324,8 +329,11 @@ function bindEvents() {
 // ---------- Start ----------
 applyStaticText();
 loadLocal();
+loadWishLocal();
 addEventListener("hashchange", () => { readHash(); render(); });
 readHash();
 bindEvents();
+bindWishEvents();
 render();
 connectLive(setStatus, render);
+connectWishLive(() => view.mode === "wish" && renderWishView());

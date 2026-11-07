@@ -31,6 +31,7 @@ function cardsFor(n) {
       return {
         id: `${setId}-${num}`, date, total, num, cat, setIdx, rarity: TCG_RARITY_NAMES[rarityIdx],
         name: (de && nameDe) || nameEn, set: (de && setDe) || setEn, srcs: imageSources(setId, num, img, deSet, deNum),
+        keys: [nameEn, nameDe, setEn, setDe].map(s => norm(s || "")).join(" "),  // für die Kartensuche
       };
     });
     cards.sort((a, b) => RARITY[a.cat].tierRank - RARITY[b.cat].tierRank || a.setIdx - b.setIdx || a.num.localeCompare(b.num, "en", { numeric: true }));
@@ -39,6 +40,30 @@ function cardsFor(n) {
   return cardCache.get(n);
 }
 const findCard = (n, id) => (id ? cardsFor(n).find(c => c.id === id) : undefined);
+const setName = i => (LANG !== "en" && TCG_SETS[i][5]) || TCG_SETS[i][1];
+
+// Alle Karten einmal (eine Karte kann mehreren Pokémon gehören: ns), nach id abrufbar.
+let allCardsCache = null;
+function allCards() {
+  if (!allCardsCache) {
+    const byId = new Map();
+    for (const p of DEX) for (const c of cardsFor(p.n)) {
+      const known = byId.get(c.id);
+      if (known) { known.ns.push(p.n); known.keys += ` ${norm(p.de)} ${norm(p.en)}`; }
+      else byId.set(c.id, { ...c, ns: [p.n], keys: `${c.keys} ${norm(p.de)} ${norm(p.en)} ${norm(c.num)}` });
+    }
+    allCardsCache = byId;
+  }
+  return allCardsCache;
+}
+const cardById = id => allCards().get(id);
+
+// Kartensuche: jedes Wort muss vorkommen (Pokémon-, Karten-, Setname in DE/EN oder Nummer).
+function searchCards(query) {
+  const words = query.split(/\s+/).map(norm).filter(Boolean);
+  const cards = [...allCards().values()];
+  return words.length ? cards.filter(c => words.every(w => c.keys.includes(w))) : cards;
+}
 
 // ---------- Binder ----------
 function locate(n) {
