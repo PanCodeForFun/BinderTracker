@@ -8,6 +8,8 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 ## Features
 
+- **Four sections** in the top bar: Binder, Wishlist, Statistics and Options (language, backup, storage), each with an icon.
+
 - **Full National Dex** (#1–#1025) laid out as 4×4 binder pages. Slot 1 is top left, slot 16 bottom right, page 2 starts with #17.
 - **Two binders**: Binder 1 holds #1–#640 (40 pages), Binder 2 starts at #641 and grows with new generations.
 - **Search** by German or English name or by Dex number. Jumps straight to the right binder, page and slot.
@@ -15,7 +17,8 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **Reverse Holo** option on every normal and holo card.
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
 - **Statistics** for collection progress per binder and per rarity tier.
-- **Backup** of the collection as a JSON file, which can be restored on any device.
+- **Wishlist** with three tabs: the **card list** shows all ~17,400 cards booster by booster (newest first, rarest first within a set, with a separator and set logo per booster, a "Nächstes Booster" button and a dropdown to jump to any booster; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets (with set logo) from your wished cards, with promos and similar listed separately as singles. Click any card image there to see it full size (German or English high-resolution scan when online); ×, Escape or Back closes it.
+- **Backup** of the collection and wishlist as a JSON file, which can be restored on any device.
 - Works fully offline when opened locally. Names, sprites and card data ship with the app; card images can be downloaded once (see below).
 
 ### Rarity tiers
@@ -30,9 +33,9 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 ## Usage
 
-Open `index.html` in a browser. No installation or build step is needed. The collection is saved in the browser's local storage, so use **Backup speichern** regularly.
+Run `python start.py` (on Windows: double-click `start.bat`). It checks that the card images and the German card data are on disk, downloads anything missing, stops with an error if the download fails, and then serves the app at http://127.0.0.1:8000. `python start.py 8001` uses another port. `start-debug.bat` (`python start.py --debug-delay 120`) always shows the loading screen and holds it at 99 % for 120 seconds, to look at the animation. Opening `index.html` directly still works too. The collection is saved in the browser's local storage, so use **Backup speichern** regularly.
 
-The interface is in German.
+The interface and card names are in German by default. A language menu in the header switches to English (Japanese is planned); the choice is saved in the browser. In German mode the card picker shows German card and set names and the German card image where available, falling back to English.
 
 ## Project structure
 
@@ -41,10 +44,14 @@ The interface is in German.
 | `js/config.js` | Settings: binder size, rarity tiers, colors, symbols |
 | `js/data.js` | Pokédex, card lookup, binder positions, search |
 | `js/store.js` | Saving, optional online sync, backup |
+| `js/i18n.js` | Language menu and UI texts (German, English) |
+| `js/wishlist.js` | Wishlist, card list and shopping helper |
 | `js/ui.js` | User interface |
 | `data/` | Generated data files, do not edit by hand |
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
+| `tools/download_german.py` | Downloads German set data, card images and set logos from TCGdex to `sources/` |
+| `start.py`, `start.bat`, `start-debug.bat`, `laden.html` | Checks/downloads data (with a loading screen in the browser), then serves the app on 127.0.0.1 |
 
 ### Offline card images
 
@@ -70,6 +77,7 @@ This downloads the latest Pokémon names, sprites and card data and rewrites the
 ## Data sources
 
 - Pokémon names and sprites: [PokeAPI](https://github.com/PokeAPI)
+- German set data and card images: [TCGdex](https://github.com/tcgdex/cards-database)
 - Card data: [PokemonTCG/pokemon-tcg-data](https://github.com/PokemonTCG/pokemon-tcg-data), card images from images.pokemontcg.io
 
 ## License

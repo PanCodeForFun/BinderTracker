@@ -53,6 +53,8 @@ def download(job):
 
 def main():
     jobs = {card_id: (card_id, url, local) for card_id, url, local in all_cards()}
+    for set_id, *_ in read_js_var((ROOT / "data" / "cards.js").read_text(encoding="utf-8"), "TCG_SETS"):
+        jobs[f"logo-{set_id}"] = (set_id, f"{IMG_HOST}{set_id}/logo.png", IMAGES / "logos" / f"{set_id}.png")  # Set-Logos
     if len(sys.argv) > 1:
         owned = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))["collection"]
         wanted = {e["card"] for e in owned.values() if e.get("card")}
@@ -65,9 +67,11 @@ def main():
             counts[key] += 1
             if key == "Fehler":
                 print(result)
-            if i % 500 == 0:
+            if i % 100 == 0 or i == len(jobs):
                 print(f"{i}/{len(jobs)} …")
 
+    if jobs and counts["Fehler"] == len(jobs):
+        sys.exit("FEHLER: Keine Bilder geladen. Internetverbindung prüfen.")
     IMAGES.mkdir(exist_ok=True)
     (IMAGES / "available.js").write_text("window.LOCAL_IMAGES = true;\n", encoding="utf-8")
     print(f"Fertig: {counts['neu']} neu, {counts['da']} schon vorhanden, {counts['Fehler']} Fehler.")

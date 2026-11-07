@@ -1,13 +1,16 @@
 """Baut data/pokedex.js, data/sprites.js und data/cards.js neu.
 
-Aufruf (Python 3, Internet nötig):  python tools/build_data.py
-Quellen: PokeAPI (Namen, Bilder) und PokemonTCG/pokemon-tcg-data (Karten).
+Aufruf (Python 3 und git, Internet nötig):  python tools/build_data.py
+Quellen: PokeAPI (Namen, Bilder), PokemonTCG/pokemon-tcg-data (Karten, Seltenheiten)
+und TCGdex (deutsche Karten- und Set-Namen, wird nach sources/tcgdex-db geklont).
 """
 import base64
 import csv
 import io
 import json
 import pathlib
+import re
+import subprocess
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -15,7 +18,13 @@ RAW = "https://raw.githubusercontent.com"
 POKEAPI_CSV = f"{RAW}/PokeAPI/pokeapi/master/data/v2/csv"
 SPRITE_URL = f"{RAW}/PokeAPI/sprites/master/sprites/pokemon/{{}}.png"
 TCG = f"{RAW}/PokemonTCG/pokemon-tcg-data/master"
-OUT = pathlib.Path(__file__).resolve().parent.parent / "data"
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+OUT = ROOT / "data"
+TCGDEX_GIT = "https://github.com/tcgdex/cards-database.git"
+TCGDEX = ROOT / "sources" / "tcgdex-db"
+# Sets, deren englischer Name bei TCGdex anders lautet: pokemon-tcg-data-ID -> TCGdex-ID
+TCGDEX_SET_IDS = {"base1": "base1", "hgss2": "hgss2", "hgss3": "hgss3", "hgss4": "hgss4",
+                  "fut20": "fut2020", "svp": "svp", "sve": "sve", "me55c": "30th-c"}
 LANG_DE, LANG_EN = "6", "9"
 
 # Original-Seltenheit der Karte -> Kategorie in js/config.js (RARITIES[].pool)
@@ -66,32 +75,83 @@ def build_sprites(numbers):
     write_js("sprites.js", "Pokémon-Bilder (PokeAPI), eingebettet für Offline-Nutzung", SPRITES=sprites)
 
 
+def update_tcgdex():
+    if (TCGDEX / ".git").exists():
+        subprocess.run(["git", "-C", str(TCGDEX), "pull", "--ff-only", "-q"], check=True)
+    else:
+        TCGDEX.parent.mkdir(exist_ok=True)
+        subprocess.run(["git", "clone", "--depth", "1", "-q", TCGDEX_GIT, str(TCGDEX)], check=True)
+
+
+def ts_names(text):
+    """Die erste Namensliste einer TCGdex-Datei: {"de": "...", "en": "..."}."""
+    m = re.search(r"name:\s*\{([^}]*)\}", text)
+    return dict(re.findall(r"""["']?([\w-]+)["']?:\s*["'](.*?)["'],?\s*$""", m[1], re.M)) if m else {}
+
+
+def tcgdex_sets(sets):
+    """Ordnet jedem Set aus pokemon-tcg-data das TCGdex-Set zu (über englischen Namen und Datum).
+    Ergebnis: {Set-ID: (TCGdex-ID, deutscher Name, {Kartennummer: (Ordnername, deutscher Kartenname)})}"""
+    norm = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())
+    found = {}
+    for path in (TCGDEX / "data").glob("*/*.ts"):
+        text = path.read_text(encoding="utf-8")
+        set_id = re.search(r"""id:\s*["']([^"']+)""", text)[1]
+        date = re.search(r"""releaseDate:\s*["']([^"']+)""", text)
+        found[set_id] = (ts_names(text), date[1][:7] if date else "", path.with_suffix(""))
+    by_name = {}
+    for set_id, (names, date, _) in found.items():
+        by_name.setdefault(norm(names.get("en", "")), []).append((set_id, date))
+
+    key = lambda num: re.sub(r"^0+(?=\w)", "", num).lower()
+    result = {}
+    for s in sets:
+        tid = TCGDEX_SET_IDS.get(s["id"])
+        if not tid:
+            options = by_name.get(norm(s["name"]), [])
+            same_date = [o for o in options if o[1] == s["releaseDate"][:7].replace("/", "-")]
+            tid = (same_date or options or [(None, "")])[0][0]
+        if tid not in found:
+            print("Kein TCGdex-Set für", s["id"], s["name"])
+            continue
+        names, _, folder = found[tid]
+        cards = {key(f.stem): (f.stem, ts_names(f.read_text(encoding="utf-8")).get("de", "")) for f in folder.glob("*.ts")}
+        result[s["id"]] = (tid, names.get("de", ""), cards)
+    return result, key
+
+
 def build_cards(max_n):
     sets = sorted(json.loads(get(f"{TCG}/sets/en.json")), key=lambda s: (s["releaseDate"], s["id"]))
     with ThreadPoolExecutor(16) as pool:
         set_cards = pool.map(lambda s: json.loads(get(f"{TCG}/cards/en/{s['id']}.json")), sets)
 
+    update_tcgdex()
+    german, key = tcgdex_sets(sets)
+    german = [german.get(s["id"], ("", "", {})) for s in sets]
     rarity_names, by_dex = [], {}
     for set_idx, (s, cards) in enumerate(zip(sets, set_cards)):
+        de_cards = german[set_idx][2]
         for c in cards:
             rarity = c.get("rarity") or "None"
             if c.get("supertype") != "Pokémon" or rarity not in CATEGORY_OF:
                 continue
             if rarity not in rarity_names:
                 rarity_names.append(rarity)
-            entry = [set_idx, c["number"], CATEGORY_OF[rarity], c["name"], rarity_names.index(rarity)]
             img = c["images"]["small"].replace("https://images.pokemontcg.io/", "")
-            if img != f"{s['id']}/{c['number']}.png":
-                entry.append(img)
+            local_id, de_name = de_cards.get(key(c["number"]), ("", ""))
+            entry = [set_idx, c["number"], CATEGORY_OF[rarity], c["name"], rarity_names.index(rarity),
+                     "" if img == f"{s['id']}/{c['number']}.png" else img, de_name, local_id]
             for n in c.get("nationalPokedexNumbers") or []:
                 if 1 <= n <= max_n:
                     by_dex.setdefault(n, []).append(entry)
 
     write_js(
         "cards.js",
-        "Kartendaten (PokemonTCG/pokemon-tcg-data). TCG_SETS: [id, Name, Serie, Erscheinung, Kartenanzahl]; "
-        "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend]",
-        TCG_SETS=[[s["id"], s["name"], s["series"], s["releaseDate"][:7].replace("/", "-"), s.get("printedTotal", s["total"])] for s in sets],
+        "Kartendaten (PokemonTCG/pokemon-tcg-data, deutsche Namen von TCGdex). "
+        "TCG_SETS: [id, Name, Serie, Erscheinung, Kartenanzahl, deutscher Name, TCGdex-ID]; "
+        "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend, deutscher Name, TCGdex-Nummer]",
+        TCG_SETS=[[s["id"], s["name"], s["series"], s["releaseDate"][:7].replace("/", "-"), s.get("printedTotal", s["total"]),
+                   de_set, tcgdex_id] for s, (tcgdex_id, de_set, _) in zip(sets, german)],
         TCG_RARITY_NAMES=rarity_names,
         TCG_CARDS=dict(sorted(by_dex.items())),
     )

@@ -1,2 +1,5 @@
 # Lokale Kartenbilder (tools/download_images.py), zu groß fürs Repo
 images/
+
+# Deutsche Daten und Bilder von TCGdex (tools/download_german.py)
+sources/

@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pokémon Binder Tracker</title>
 <link rel="stylesheet" href="style.css">
+<script>
+// Läuft start.py noch (Daten fehlen oder laden), zum Ladebildschirm wechseln.
+// Ohne start.py (Datei direkt geöffnet, anderer Webhoster) gibt es api/status nicht: nichts tun.
+if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store" })
+  .then(r => (r.ok ? r.json() : null))
+  .then(s => { if (s && s.state !== "done") location.replace("laden.html"); })
+  .catch(() => {});
+</script>
 </head>
 <body>
 <header class="top">
@@ -13,57 +21,105 @@
     <h1>Binder Tracker</h1>
   </div>
 
-  <div class="tools">
-    <span id="status" class="status wait"></span>
-    <button id="btnStats" class="ghost">Statistik</button>
-    <button id="btnExport" class="ghost" title="Sammlung als Datei sichern">Backup speichern</button>
-    <label class="ghost" title="Gesicherte Datei wieder laden">
-      Backup laden<input id="fileImport" type="file" accept=".json,application/json" hidden>
-    </label>
-  </div>
+  <nav class="mainnav" aria-label="Bereiche">
+    <button class="sect" data-mode="page">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M4 12h16"/></svg>
+      <span data-i18n="binder">Binder</span></button>
+    <button class="sect" data-mode="wish">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>
+      <span data-i18n="wish">Wunschliste</span></button>
+    <button class="sect" data-mode="stats">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>
+      <span data-i18n="stats">Statistik</span></button>
+    <button class="sect" data-mode="data">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      <span data-i18n="data">Optionen</span></button>
+  </nav>
+
+  <span id="status" class="status wait"></span>
 </header>
 
-<nav class="bar">
+<nav id="binderBar" class="bar">
   <div class="tabs" role="tablist">
     <button class="tab" data-binder="1" role="tab">Binder 1</button>
     <button class="tab" data-binder="2" role="tab">Binder 2</button>
   </div>
 
   <div class="views">
-    <button class="view" data-view="page">Seite</button>
-    <button class="view" data-view="overview">Übersicht</button>
+    <button class="view" data-view="page" data-i18n="page">Seite</button>
+    <button class="view" data-view="overview" data-i18n="overview">Übersicht</button>
   </div>
 
-
   <div class="filter">
-    <label>Anzeigen
+    <label><span data-i18n="show">Anzeigen</span>
       <select id="filter">
-        <option value="all">alle</option>
-        <option value="missing">nur fehlende</option>
-        <option value="have">nur vorhandene</option>
+        <option value="all" data-i18n="all">alle</option>
+        <option value="missing" data-i18n="onlyMissing">nur fehlende</option>
+        <option value="have" data-i18n="onlyHave">nur vorhandene</option>
       </select>
     </label>
   </div>
 </nav>
 
 <main>
-  <div class="search">
-    <input id="search" type="search" autocomplete="off" placeholder="Pokémon suchen (Deutsch, Englisch oder Nummer)…" aria-label="Pokémon suchen">
+  <div id="binderSearch" class="search">
+    <input id="search" type="search" autocomplete="off" placeholder="Pokémon suchen (Deutsch, Englisch oder Nummer)…" data-i18n-ph="searchPh" data-i18n-tip="searchLabel">
     <ul id="suggest" class="suggest" hidden></ul>
   </div>
   <section id="pageView" class="page-wrap">
     <div class="page-head">
       <div class="page-name"><h2 id="pageTitle"></h2><span id="pageRange"></span></div>
       <div class="pager">
-        <button id="prev" aria-label="Vorherige Seite">‹</button>
-        <label>Seite <select id="pageSelect"></select> <span id="pageCount"></span></label>
-        <button id="next" aria-label="Nächste Seite">›</button>
+        <button id="prev" data-i18n-tip="prevPage">‹</button>
+        <label><span data-i18n="page">Seite</span> <select id="pageSelect"></select> <span id="pageCount"></span></label>
+        <button id="next" data-i18n-tip="nextPage">›</button>
       </div>
       <span id="pageProgress" class="page-progress"></span>
     </div>
     <div id="grid" class="grid"></div>
   </section>
   <section id="overView" class="overview" hidden></section>
+  <section id="wishView" class="wishview" hidden>
+    <div class="views wl-tabs">
+      <button class="wtab" data-wtab="cards" data-i18n="cardList">Kartenliste</button>
+      <button class="wtab" data-wtab="list"><span data-i18n="wish">Wunschliste</span> <small id="wlNum"></small></button>
+      <button class="wtab" data-wtab="shop" data-i18n="shop">Einkaufshilfe</button>
+    </div>
+    <div id="wlCards" class="wl-pane">
+      <div class="wl-tools">
+        <input id="wlSearch" type="search" autocomplete="off" data-i18n-ph="wlSearchPh" data-i18n-tip="wlSearchPh">
+        <select id="wlSet" data-i18n-tip="boosterLabel"></select>
+        <select id="wlSort" data-i18n-tip="sortLabel"></select>
+        <span id="wlCount" class="sub"></span>
+      </div>
+      <div id="wlGrid" class="wl-grid"></div>
+      <button id="wlMore" class="ghost wl-more" data-i18n="more">Mehr anzeigen</button>
+    </div>
+    <div id="wlSide" class="wl-pane" hidden></div>
+  </section>
+  <section id="statsView" class="panel-view" hidden>
+    <h2 data-i18n="stats">Statistik</h2>
+    <div id="statsBody"></div>
+  </section>
+  <section id="dataView" class="panel-view" hidden>
+    <h2 data-i18n="data">Daten</h2>
+    <div class="data-row">
+      <div><b data-i18n="language">Sprache</b><div class="sub" data-i18n="languageHint"></div></div>
+      <select id="lang" class="lang" data-i18n-tip="language"></select>
+    </div>
+    <div class="data-row">
+      <div><b data-i18n="backup">Backup</b><div class="sub" data-i18n="backupHint"></div></div>
+      <div class="foot-btns">
+        <button id="btnExport" class="ghost primary" data-i18n="backupSave" data-i18n-tip="backupSaveTip">Backup speichern</button>
+        <label class="ghost" data-i18n-tip="backupLoadTip">
+          <span data-i18n="backupLoad">Backup laden</span><input id="fileImport" type="file" accept=".json,application/json" hidden>
+        </label>
+      </div>
+    </div>
+    <div class="data-row">
+      <div><b data-i18n="storage">Speicherort</b><div class="sub" id="statusText"></div></div>
+    </div>
+  </section>
 </main>
 
 <div id="modalBack" class="modal-back" hidden></div>
@@ -72,39 +128,43 @@
   <div class="modal-head">
     <img id="pickerSprite" class="spr" alt="">
     <div><strong id="pickerTitle"></strong><div id="pickerSub" class="sub"></div></div>
-    <button id="pickerClose" class="x" aria-label="Schließen">×</button>
+    <button id="pickerClose" class="x" data-i18n-tip="close">×</button>
   </div>
   <div id="designs" class="designs"></div>
   <div class="modal-foot">
-    <label class="note">Notiz <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …"></label>
+    <label class="note"><span data-i18n="note">Notiz</span> <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …" data-i18n-ph="notePh"></label>
     <div class="foot-btns">
-      <button id="btnClear" class="ghost">Slot leeren</button>
-      <select id="noDesignRarity" aria-label="Seltenheit ohne Design"></select>
-      <button id="btnNoDesign" class="ghost">Ohne Design</button>
+      <button id="btnClear" class="ghost" data-i18n="clearSlot">Slot leeren</button>
+      <select id="noDesignRarity" data-i18n-tip="noDesignRarity"></select>
+      <button id="btnNoDesign" class="ghost" data-i18n="noDesign">Ohne Design</button>
     </div>
   </div>
 </div>
 
-<div id="statsModal" class="modal stats-modal" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-  <div class="modal-head"><strong id="statsTitle">Statistik</strong><button id="statsClose" class="x" aria-label="Schließen">×</button></div>
-  <div id="statsBody"></div>
-</div>
 
 <div id="confirm" class="confirm" hidden role="alertdialog">
   <span id="confirmText"></span>
-  <button id="confirmYes" class="ghost primary">Laden</button>
-  <button id="confirmNo" class="ghost">Abbrechen</button>
+  <button id="confirmYes" class="ghost primary" data-i18n="load">Laden</button>
+  <button id="confirmNo" class="ghost" data-i18n="cancel">Abbrechen</button>
+</div>
+
+<div id="zoom" class="zoom" hidden role="dialog" aria-modal="true">
+  <button id="zoomClose" class="x zoom-x" data-i18n-tip="close">×</button>
+  <figure id="zoomBox"></figure>
 </div>
 
 <div id="toast" class="toast" hidden></div>
 
 <script src="images/available.js"></script>
+<script src="sources/images-de/available.js"></script>
 <script src="data/pokedex.js"></script>
 <script src="data/sprites.js"></script>
 <script src="data/cards.js"></script>
 <script src="js/config.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/data.js"></script>
 <script src="js/store.js"></script>
+<script src="js/wishlist.js"></script>
 <script src="js/ui.js"></script>
 </body>
 </html>

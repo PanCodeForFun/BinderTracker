@@ -20,6 +20,7 @@ function toast(msg) {
 function setStatus(kind, text) {
   $("#status").className = "status " + kind;
   $("#status").textContent = text;
+  $("#statusText").textContent = text;
 }
 
 function openModal(id) {
@@ -41,20 +42,45 @@ function askConfirm(msg, onYes) {
   $("#confirmNo").onclick = () => ($("#confirm").hidden = true);
 }
 
-// Kartenbild: erst die lokale Kopie (falls heruntergeladen), dann aus dem Internet,
-// sonst eine Textkarte.
+// Kartenbild: Quellen aus card.srcs der Reihe nach (siehe imageSources), sonst eine Textkarte.
 function cardImage(card, extra = "") {
-  const [src, fallback] = window.LOCAL_IMAGES ? [card.local, card.small] : [card.small, ""];
+  const [src, ...rest] = card.srcs;
   return `<div class="cardbox">
-    <img src="${esc(src)}" data-fallback="${esc(fallback)}" alt="${esc(card.name)}" loading="lazy" onerror="cardImageFailed(this)">
+    <img src="${esc(src)}" data-fallback="${esc(rest.join("|"))}" alt="${esc(card.name)}" loading="lazy" onerror="cardImageFailed(this)">
     <div class="textcard">${extra}<b>${esc(card.set)}</b><span>${esc(card.num)}/${esc(card.total)}</span></div>
   </div>`;
 }
 
+// Bild mit Ersatzquellen (z. B. Set-Logos): srcs der Reihe nach, sonst verschwindet es.
+function imgChain(srcs, attrs = "") {
+  const [src, ...rest] = srcs;
+  return `<img src="${esc(src)}" data-fallback="${esc(rest.join("|"))}" ${attrs} loading="lazy" onerror="cardImageFailed(this)">`;
+}
+
+// ---------- Vollansicht einer Karte (×, Escape, Zurück oder Klick daneben schließt) ----------
+function openZoom(card) {
+  if (!card) return;
+  $("#zoomBox").innerHTML = imgChain([...card.big, ...card.srcs], `alt="${esc(card.name)}"`) +
+    `<figcaption><b>${esc(card.name)}</b> · ${esc(card.set)} · ${esc(card.num)}/${esc(card.total)}</figcaption>`;
+  $("#zoomBox img").loading = "eager";
+  $("#zoom").hidden = false;
+  document.body.classList.add("modal-open");
+  history.pushState({ zoom: true }, "");
+}
+function closeZoom(viaHistory = false) {
+  if ($("#zoom").hidden) return false;
+  $("#zoom").hidden = true;
+  document.body.classList.remove("modal-open");
+  if (!viaHistory && history.state?.zoom) history.back();
+  return true;
+}
+addEventListener("popstate", () => closeZoom(true));
+
 function cardImageFailed(img) {
   if (img.dataset.fallback) {
-    img.src = img.dataset.fallback;
-    img.dataset.fallback = "";
+    const [next, ...rest] = img.dataset.fallback.split("|");
+    img.dataset.fallback = rest.join("|");
+    img.src = next;
   } else {
     img.parentNode.classList.add("noimg");
     img.remove();
@@ -70,31 +96,31 @@ function progressTile(label, have, total) {
 function slotHtml(n) {
   const p = BY_N.get(n), loc = locate(n);
   const corner = `<span class="pos">${loc.row}/${loc.col}</span><span class="num">${pad(n)}</span>`;
-  if (!p) return `<div class="slot future">${corner}<div class="free">frei für neue Pokémon</div></div>`;
+  if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
 
   const e = owned(n), r = e && RARITY[e.r], card = e && findCard(n, e.card);
   const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e);
   const visual = card
     ? cardImage(card, `<img class="spr" src="${spriteUrl(n)}" alt="">`)
     : `<img class="spr" src="${spriteUrl(n)}" alt="">`;
-  const sub = card ? `${card.set} · ${card.num}` : p.en !== p.de ? p.en : "";
+  const sub = card ? `${card.set} · ${card.num}` : p.alt !== p.name ? p.alt : "";
 
   return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
-    <div class="de">${esc(p.de)}</div>
+    <div class="de">${esc(p.name)}</div>
     <div class="sub">${esc(sub) || "&nbsp;"}</div>
-    <button class="rbtn">${r ? esc(r.label) : "+ Karte wählen"}</button>
+    <button class="rbtn">${r ? esc(r.label) : t("pickCard")}</button>
   </div>`;
 }
 
 function renderPage() {
   const start = firstOnPage(view.binder, view.page);
   const numbers = Array.from({ length: LAYOUT.slotsPerPage }, (_, i) => start + i);
-  $("#pageTitle").textContent = `Binder ${view.binder} · Seite ${view.page}`;
-  $("#pageRange").textContent = `${pad(start)} bis ${pad(Math.min(start + LAYOUT.slotsPerPage - 1, Math.max(start, MAX_N)))}`;
+  $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
+  $("#pageRange").textContent = t("range", { a: pad(start), b: pad(Math.min(start + LAYOUT.slotsPerPage - 1, Math.max(start, MAX_N))) });
   $("#pageProgress").textContent =
-    `${ownedCount(p => inBinder(view.binder, p.n))} / ${DEX.filter(p => inBinder(view.binder, p.n)).length} im Binder`;
+    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: DEX.filter(p => inBinder(view.binder, p.n)).length });
   $("#grid").innerHTML = numbers.map(slotHtml).join("");
 }
 
@@ -105,10 +131,10 @@ function renderOverview() {
     const numbers = Array.from({ length: LAYOUT.slotsPerPage }, (_, i) => start + i);
     const cells = numbers.map(n => {
       const p = BY_N.get(n), r = RARITY[owned(n)?.r];
-      return `<span class="${!p ? "void" : r ? "have" : ""}" ${colorStyle(r)} title="${p ? esc(pad(n) + " " + p.de) : "frei"}"></span>`;
+      return `<span class="${!p ? "void" : r ? "have" : ""}" ${colorStyle(r)} title="${p ? esc(pad(n) + " " + p.name) : t("free")}"></span>`;
     });
     const have = numbers.filter(owned).length, real = numbers.filter(n => BY_N.has(n)).length;
-    html += `<button class="mini" data-page="${page}"><div class="t"><b>Seite ${page}</b><span>${have}/${real}</span></div><div class="g">${cells.join("")}</div></button>`;
+    html += `<button class="mini" data-page="${page}"><div class="t"><b>${t("page")} ${page}</b><span>${have}/${real}</span></div><div class="g">${cells.join("")}</div></button>`;
   }
   $("#overView").innerHTML = html;
 }
@@ -117,16 +143,22 @@ function render() {
   const pages = pageCount(view.binder);
   view.page = Math.min(Math.max(1, view.page), pages);
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", +b.dataset.binder === view.binder));
+  const binder = view.mode === "page" || view.mode === "overview";
+  if (binder) view.binderMode = view.mode;  // beim Zurückwechseln wieder Seite bzw. Übersicht
+  document.querySelectorAll(".sect").forEach(b => b.classList.toggle("on", b.dataset.mode === view.mode || (binder && b.dataset.mode === "page")));
   document.querySelectorAll(".view").forEach(b => b.classList.toggle("on", b.dataset.view === view.mode));
+  $("#binderBar").hidden = $("#binderSearch").hidden = !binder;
   $("#pageSelect").innerHTML = Array.from({ length: pages }, (_, i) => `<option>${i + 1}</option>`).join("");
   $("#pageSelect").value = view.page;
-  $("#pageCount").textContent = `von ${pages}`;
+  $("#pageCount").textContent = t("of", { n: pages });
   $("#prev").disabled = view.binder === 1 && view.page === 1;
   $("#next").disabled = view.binder === 2 && view.page === pages;
   $("#pageView").hidden = view.mode !== "page";
   $("#overView").hidden = view.mode !== "overview";
-  (view.mode === "page" ? renderPage : renderOverview)();
-  if (!$("#statsModal").hidden) renderStats();
+  $("#wishView").hidden = view.mode !== "wish";
+  $("#statsView").hidden = view.mode !== "stats";
+  $("#dataView").hidden = view.mode !== "data";
+  ({ page: renderPage, overview: renderOverview, wish: renderWishView, stats: renderStats, data: () => {} })[view.mode]();
   if (pick.n) renderPicker();
   writeHash();
 }
@@ -155,8 +187,8 @@ const pick = { n: null };
 function openPicker(n) {
   const p = BY_N.get(n), e = owned(n);
   pick.n = n;
-  $("#pickerTitle").textContent = `${pad(n)} ${p.de}`;
-  $("#pickerSub").textContent = `${p.en !== p.de ? p.en + " · " : ""}${cardsFor(n).length} Karten bekannt`;
+  $("#pickerTitle").textContent = `${pad(n)} ${p.name}`;
+  $("#pickerSub").textContent = `${p.alt !== p.name ? p.alt + " · " : ""}${t("cardsKnown", { n: cardsFor(n).length })}`;
   $("#pickerSprite").src = spriteUrl(n);
   $("#pickerNote").value = e?.note || "";
   $("#noDesignRarity").value = e?.r || "normal";
@@ -171,12 +203,12 @@ function renderPicker() {
   const tierOf = c => RARITY[c.cat].tier;
   const counts = countBy(cards, tierOf);
   $("#btnClear").disabled = !e;
-  $("#designs").innerHTML = !cards.length ? `<p class="sub">Keine Karten bekannt. Nutze „Ohne Design“.</p>` : cards.map((c, i) => {
-    const t = TIER[tierOf(c)];
-    const head = i && tierOf(cards[i - 1]) === t.id ? "" : `<h4 class="group" ${colorStyle(t)}><i></i>${esc(t.label)} <small>${counts[t.id]}</small></h4>`;
-    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${colorStyle(t)}>
-      <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span><span class="rname">${esc(c.rarity === "None" ? "ohne Angabe" : c.rarity)}</span>${
-        REVERSE_FROM.includes(c.cat) ? `<span class="rev${e?.card === c.id && e.r === "reverse" ? " on" : ""}" data-rev title="Diese Karte als Reverse Holo">Reverse</span>` : ""}</div>
+  $("#designs").innerHTML = !cards.length ? `<p class="sub">${t("noCards")}</p>` : cards.map((c, i) => {
+    const tier = TIER[tierOf(c)];
+    const head = i && tierOf(cards[i - 1]) === tier.id ? "" : `<h4 class="group" ${colorStyle(tier)}><i></i>${esc(tier.label)} <small>${counts[tier.id]}</small></h4>`;
+    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${colorStyle(tier)}>
+      <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span><span class="rname">${esc(c.rarity === "None" ? t("noRarity") : c.rarity)}</span>${
+        REVERSE_FROM.includes(c.cat) ? `<span class="rev${e?.card === c.id && e.r === "reverse" ? " on" : ""}" data-rev title="${t("reverseTip")}">Reverse</span>` : ""}</div>
       ${cardImage(c, `<span>${esc(c.name)}</span>`)}
       <div class="dmeta"><b>${esc(c.set)}</b><span>${esc(c.num)}/${esc(c.total)} · ${esc(c.date.slice(0, 4))}</span></div>
     </button>`;
@@ -185,11 +217,12 @@ function renderPicker() {
 
 async function commit(entry) {
   const n = pick.n, prev = RARITY[owned(n)?.r];
-  if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(`Hinweis: ${prev.label} war seltener als ${RARITY[entry.r].label}.`);
+  if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(t("rarerHint", { a: prev.label, b: RARITY[entry.r].label }));
   closeModals();
   const done = saveEntry(n, entry);
+  if (entry?.card && isWished(entry.card)) setWish(entry.card, false).catch(() => setStatus("err", t("saveFailed")));
   render();
-  try { await done; } catch { setStatus("err", "Online-Speichern fehlgeschlagen"); }
+  try { await done; } catch { setStatus("err", t("saveFailed")); }
 }
 // Klick auf die Karte wählt sie, Klick auf „Reverse“ wählt sie als Reverse Holo.
 function choose(cardId, asReverse) {
@@ -204,13 +237,13 @@ function renderStats() {
   const max = Math.max(1, ...Object.values(counts));
   const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), DEX.filter(p => inBinder(b, p.n)).length);
   $("#statsBody").innerHTML = `
-    <div class="stat-tiles">${progressTile("gesamt", entries.length, DEX.length)}${binderTile(1)}${binderTile(2)}</div>
-    <h3>Nach Seltenheit</h3>
+    <div class="stat-tiles">${progressTile(t("total"), entries.length, DEX.length)}${binderTile(1)}${binderTile(2)}</div>
+    <h3>${t("byRarity")}</h3>
     <div class="bars">${TIERS.map(t => `
       <div class="barrow"><span class="bl"><i style="background:${t.color}"></i>${esc(t.label)}</span>
       <span class="bt"><span style="width:${((counts[t.id] || 0) / max) * 100}%;background:${t.color}"></span></span>
       <b>${counts[t.id] || 0}</b></div>`).join("")}</div>
-    <p class="sub">${entries.filter(e => e.card).length} von ${entries.length} Karten mit gewähltem Kartendesign.</p>`;
+    <p class="sub">${t("withDesign", { a: entries.filter(e => e.card).length, b: entries.length })}</p>`;
 }
 
 // ---------- Suche ----------
@@ -221,12 +254,12 @@ function renderSuggest() {
   suggest.hits = search(q);
   suggest.active = 0;
   $("#suggest").hidden = !q.trim();
-  $("#suggest").innerHTML = !suggest.hits.length ? `<li class="none">Nichts gefunden</li>` : suggest.hits.map((p, i) => {
+  $("#suggest").innerHTML = !suggest.hits.length ? `<li class="none">${t("nothingFound")}</li>` : suggest.hits.map((p, i) => {
     const loc = locate(p.n), r = RARITY[owned(p.n)?.r];
     return `<li data-i="${i}" class="${i ? "" : "active"}"><img src="${spriteUrl(p.n)}" alt="">
-      <div><div><b>${esc(p.de)}</b> <span class="en">${p.en !== p.de ? esc(p.en) : ""}</span></div>
-      <div class="en">${pad(p.n)} · ${r ? esc(r.label) : "fehlt noch"}</div></div>
-      <span class="where">B${loc.binder} · S. ${loc.page} · ${slotText(loc)}</span></li>`;
+      <div><div><b>${esc(p.name)}</b> <span class="en">${p.alt !== p.name ? esc(p.alt) : ""}</span></div>
+      <div class="en">${pad(p.n)} · ${r ? esc(r.label) : t("missingYet")}</div></div>
+      <span class="where">${t("where", { b: loc.binder, p: loc.page, slot: slotText(loc) })}</span></li>`;
   }).join("");
 }
 
@@ -238,13 +271,15 @@ function pickSuggestion(i) {
   goTo(p.n);
 }
 
-// ---------- Adresse (#b1-s3, #b2-s1-ue) ----------
+// ---------- Adresse (#b1-s3, #b2-s1-ue Übersicht, -wl Wunschliste, -st Statistik, -da Daten) ----------
+const HASH_MODES = { "": "page", "-ue": "overview", "-wl": "wish", "-st": "stats", "-da": "data" };
 function readHash() {
-  const m = location.hash.match(/^#b([12])-s(\d+)(-ue)?$/);
-  if (m) Object.assign(view, { binder: +m[1], page: +m[2], mode: m[3] ? "overview" : "page" });
+  const m = location.hash.match(/^#b([12])-s(\d+)(-ue|-wl|-st|-da)?$/);
+  if (m) Object.assign(view, { binder: +m[1], page: +m[2], mode: HASH_MODES[m[3] || ""] });
 }
 function writeHash() {
-  const h = `#b${view.binder}-s${view.page}${view.mode === "overview" ? "-ue" : ""}`;
+  const suffix = Object.keys(HASH_MODES).find(k => HASH_MODES[k] === view.mode);
+  const h = `#b${view.binder}-s${view.page}${suffix}`;
   if (location.hash !== h) try { history.replaceState(null, "", h); } catch { /* egal */ }
 }
 
@@ -253,9 +288,18 @@ const on = (sel, type, fn) => $(sel).addEventListener(type, fn);
 const onClosest = (sel, type, child, fn) => on(sel, type, e => { const el = e.target.closest(child); if (el) fn(el, e); });
 
 function bindEvents() {
+  $("#lang").innerHTML = LANGS.map(l => `<option value="${l.id}"${l.disabled ? " disabled" : ""}>${esc(l.label)}</option>`).join("");
+  $("#lang").value = LANG;
+  on("#lang", "change", e => setLang(e.target.value));
   $("#noDesignRarity").innerHTML = RARITIES.map(r => `<option value="${r.id}">${esc(r.label)}</option>`).join("");
   document.querySelectorAll(".tab").forEach(b => (b.onclick = () => { Object.assign(view, { binder: +b.dataset.binder, page: 1 }); render(); }));
   document.querySelectorAll(".view").forEach(b => (b.onclick = () => { view.mode = b.dataset.view; render(); }));
+  document.querySelectorAll(".sect").forEach(b => (b.onclick = () => {
+    if (b.dataset.mode !== "page") view.mode = b.dataset.mode;
+    else if (!["page", "overview"].includes(view.mode)) view.mode = view.binderMode || "page";
+    render();
+    scrollTo({ top: 0 });
+  }));
   on("#filter", "change", e => { view.filter = e.target.value; render(); });
   on("#pageSelect", "change", e => { view.page = +e.target.value; render(); });
   on("#prev", "click", () => turnPage(-1));
@@ -267,8 +311,8 @@ function bindEvents() {
   on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });
-  on("#btnStats", "click", () => { renderStats(); openModal("#statsModal"); });
   document.querySelectorAll(".modal .x, #modalBack").forEach(el => (el.onclick = closeModals));
+  on("#zoom", "click", e => { if (!e.target.closest("img")) closeZoom(); });
 
   on("#search", "input", renderSuggest);
   on("#search", "focus", e => e.target.value && renderSuggest());
@@ -286,7 +330,7 @@ function bindEvents() {
   document.addEventListener("click", e => { if (!e.target.closest(".search")) $("#suggest").hidden = true; });
 
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") return closeModals();
+    if (e.key === "Escape") return closeZoom() || closeModals();
     if (e.target.matches("input, select") || document.body.classList.contains("modal-open") || view.mode !== "page") return;
     if (e.key === "ArrowLeft") turnPage(-1);
     if (e.key === "ArrowRight") turnPage(1);
@@ -296,9 +340,9 @@ function bindEvents() {
   on("#btnExport", "click", async () => {
     try {
       await saveFile(`binder-backup-${new Date().toISOString().slice(0, 10)}.json`, backupJson());
-      toast("Backup gespeichert.");
+      toast(t("backupSaved"));
     } catch (err) {
-      if (err?.code !== "declined") toast("Backup wurde nicht gespeichert.");
+      if (err?.code !== "declined") toast(t("backupNotSaved"));
     }
   });
   on("#fileImport", "change", async e => {
@@ -307,21 +351,26 @@ function bindEvents() {
     if (!file) return;
     try {
       const next = parseBackup(await file.text());
-      askConfirm(`Backup mit ${Object.keys(next).length} Karten laden? Deine aktuellen Einträge werden ersetzt.`, async () => {
-        await replaceCollection(next).catch(() => setStatus("err", "Online-Speichern fehlgeschlagen"));
+      askConfirm(t("backupAsk", { n: Object.keys(next.collection).length }), async () => {
+        await replaceCollection(next.collection).catch(() => setStatus("err", t("saveFailed")));
+        if (next.wishlist) await replaceWishlist(next.wishlist).catch(() => setStatus("err", t("saveFailed")));
         render();
-        toast("Backup geladen.");
+        toast(t("backupLoaded"));
       });
     } catch {
-      toast("Die Datei ist kein gültiges Backup.");
+      toast(t("backupInvalid"));
     }
   });
 }
 
 // ---------- Start ----------
+applyStaticText();
 loadLocal();
+loadWishLocal();
 addEventListener("hashchange", () => { readHash(); render(); });
 readHash();
 bindEvents();
+bindWishEvents();
 render();
 connectLive(setStatus, render);
+connectWishLive(() => view.mode === "wish" && renderWishView());
