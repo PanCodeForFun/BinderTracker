@@ -41,12 +41,24 @@ function askConfirm(msg, onYes) {
   $("#confirmNo").onclick = () => ($("#confirm").hidden = true);
 }
 
-// Kartenbild, das bei fehlendem Internet (oder auf claude.ai) zur Textkarte wird.
+// Kartenbild: erst die lokale Kopie (falls heruntergeladen), dann aus dem Internet,
+// sonst eine Textkarte.
 function cardImage(card, extra = "") {
-  return `<div class="cardbox" data-imgbox>
-    <img src="${esc(card.small)}" alt="${esc(card.name)}" loading="lazy" onerror="this.parentNode.classList.add('noimg');this.remove()">
+  const [src, fallback] = window.LOCAL_IMAGES ? [card.local, card.small] : [card.small, ""];
+  return `<div class="cardbox">
+    <img src="${esc(src)}" data-fallback="${esc(fallback)}" alt="${esc(card.name)}" loading="lazy" onerror="cardImageFailed(this)">
     <div class="textcard">${extra}<b>${esc(card.set)}</b><span>${esc(card.num)}/${esc(card.total)}</span></div>
   </div>`;
+}
+
+function cardImageFailed(img) {
+  if (img.dataset.fallback) {
+    img.src = img.dataset.fallback;
+    img.dataset.fallback = "";
+  } else {
+    img.parentNode.classList.add("noimg");
+    img.remove();
+  }
 }
 
 function progressTile(label, have, total) {
