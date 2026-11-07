@@ -8,6 +8,8 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 ## Features
 
+- **Four sections** in the top bar: Binder, Wishlist, Statistics and Data (language, backup, storage).
+
 - **Full National Dex** (#1–#1025) laid out as 4×4 binder pages. Slot 1 is top left, slot 16 bottom right, page 2 starts with #17.
 - **Two binders**: Binder 1 holds #1–#640 (40 pages), Binder 2 starts at #641 and grows with new generations.
 - **Search** by German or English name or by Dex number. Jumps straight to the right binder, page and slot.

@@ -20,6 +20,7 @@ function toast(msg) {
 function setStatus(kind, text) {
   $("#status").className = "status " + kind;
   $("#status").textContent = text;
+  $("#statusText").textContent = text;
 }
 
 function openModal(id) {
@@ -117,7 +118,11 @@ function render() {
   const pages = pageCount(view.binder);
   view.page = Math.min(Math.max(1, view.page), pages);
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", +b.dataset.binder === view.binder));
+  const binder = view.mode === "page" || view.mode === "overview";
+  if (binder) view.binderMode = view.mode;  // beim Zurückwechseln wieder Seite bzw. Übersicht
+  document.querySelectorAll(".sect").forEach(b => b.classList.toggle("on", b.dataset.mode === view.mode || (binder && b.dataset.mode === "page")));
   document.querySelectorAll(".view").forEach(b => b.classList.toggle("on", b.dataset.view === view.mode));
+  $("#binderBar").hidden = $("#binderSearch").hidden = !binder;
   $("#pageSelect").innerHTML = Array.from({ length: pages }, (_, i) => `<option>${i + 1}</option>`).join("");
   $("#pageSelect").value = view.page;
   $("#pageCount").textContent = t("of", { n: pages });
@@ -126,8 +131,9 @@ function render() {
   $("#pageView").hidden = view.mode !== "page";
   $("#overView").hidden = view.mode !== "overview";
   $("#wishView").hidden = view.mode !== "wish";
-  ({ page: renderPage, overview: renderOverview, wish: renderWishView })[view.mode]();
-  if (!$("#statsModal").hidden) renderStats();
+  $("#statsView").hidden = view.mode !== "stats";
+  $("#dataView").hidden = view.mode !== "data";
+  ({ page: renderPage, overview: renderOverview, wish: renderWishView, stats: renderStats, data: () => {} })[view.mode]();
   if (pick.n) renderPicker();
   writeHash();
 }
@@ -240,10 +246,10 @@ function pickSuggestion(i) {
   goTo(p.n);
 }
 
-// ---------- Adresse (#b1-s3, #b2-s1-ue Übersicht, #b1-s1-wl Wunschliste) ----------
-const HASH_MODES = { "": "page", "-ue": "overview", "-wl": "wish" };
+// ---------- Adresse (#b1-s3, #b2-s1-ue Übersicht, -wl Wunschliste, -st Statistik, -da Daten) ----------
+const HASH_MODES = { "": "page", "-ue": "overview", "-wl": "wish", "-st": "stats", "-da": "data" };
 function readHash() {
-  const m = location.hash.match(/^#b([12])-s(\d+)(-ue|-wl)?$/);
+  const m = location.hash.match(/^#b([12])-s(\d+)(-ue|-wl|-st|-da)?$/);
   if (m) Object.assign(view, { binder: +m[1], page: +m[2], mode: HASH_MODES[m[3] || ""] });
 }
 function writeHash() {
@@ -263,6 +269,11 @@ function bindEvents() {
   $("#noDesignRarity").innerHTML = RARITIES.map(r => `<option value="${r.id}">${esc(r.label)}</option>`).join("");
   document.querySelectorAll(".tab").forEach(b => (b.onclick = () => { Object.assign(view, { binder: +b.dataset.binder, page: 1 }); render(); }));
   document.querySelectorAll(".view").forEach(b => (b.onclick = () => { view.mode = b.dataset.view; render(); }));
+  document.querySelectorAll(".sect").forEach(b => (b.onclick = () => {
+    if (b.dataset.mode !== "page") view.mode = b.dataset.mode;
+    else if (!["page", "overview"].includes(view.mode)) view.mode = view.binderMode || "page";
+    render();
+  }));
   on("#filter", "change", e => { view.filter = e.target.value; render(); });
   on("#pageSelect", "change", e => { view.page = +e.target.value; render(); });
   on("#prev", "click", () => turnPage(-1));
@@ -274,7 +285,6 @@ function bindEvents() {
   on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });
-  on("#btnStats", "click", () => { renderStats(); openModal("#statsModal"); });
   document.querySelectorAll(".modal .x, #modalBack").forEach(el => (el.onclick = closeModals));
 
   on("#search", "input", renderSuggest);
