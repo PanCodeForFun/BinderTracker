@@ -46,7 +46,7 @@ The interface is in German.
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
 | `tools/download_german.py` | Downloads German set data and card images from TCGdex to `sources/` |
-| `start.py`, `start.bat`, `loading.html` | Checks/downloads data (with a loading screen in the browser), then serves the app on 127.0.0.1 |
+| `start.py`, `start.bat`, `laden.html` | Checks/downloads data (with a loading screen in the browser), then serves the app on 127.0.0.1 |
 
 ### Offline card images
 

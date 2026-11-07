@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binder Tracker lädt</title>
+<style>
+:root {
+  --bg: #0d0f14;
+  --bg-2: #171a24;
+  --ink: #f2f3f7;
+  --muted: #9aa0ad;
+  --accent: #ff5a52;
+  --accent-2: #ffb547;
+  --ok: #3ccf8e;
+  --err: #ff4d5e;
+  --glass: rgba(18, 21, 30, .72);
+  --glass-line: rgba(255, 255, 255, .09);
+  --card-w: clamp(92px, 12vw, 150px);
+  --radius: min(52vw, 560px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 90% at 50% 40%, var(--bg-2) 0%, var(--bg) 70%);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* ---------- rotierende Karten im Hintergrund ---------- */
+.stage {
+  position: fixed; inset: 0;
+  perspective: 1400px;
+  perspective-origin: 50% 45%;
+  pointer-events: none;
+}
+.ring {
+  position: absolute; left: 50%; top: 50%;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+  animation: spin 46s linear infinite;
+}
+.ring.back {
+  --radius: min(36vw, 400px);
+  animation-duration: 70s;
+  animation-direction: reverse;
+  filter: blur(2px) brightness(.55);
+}
+.ring.front { top: 54%; }
+.ring.back { top: 40%; }
+@keyframes spin {
+  from { transform: rotateX(-9deg) rotateY(0deg); }
+  to   { transform: rotateX(-9deg) rotateY(360deg); }
+}
+.card {
+  position: absolute;
+  width: var(--card-w);
+  aspect-ratio: 63 / 88;
+  left: calc(var(--card-w) / -2);
+  top: calc(var(--card-w) * -0.7);
+  transform-style: preserve-3d;
+  transform: rotateY(var(--a)) translateZ(var(--radius));
+}
+.card .bob {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  animation: bob 6s ease-in-out infinite;
+  animation-delay: var(--d);
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(-8px) rotateZ(-1.5deg); }
+  50%      { transform: translateY(8px)  rotateZ(1.5deg); }
+}
+.face {
+  position: absolute; inset: 0;
+  border-radius: 6% / 4.3%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+}
+.face.front {
+  background: #22252f center / cover no-repeat;
+  transition: opacity .6s;
+}
+.face.front::after { /* Glanz, der beim Drehen über die Karte läuft */
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.28) 48%, transparent 60%);
+  background-size: 300% 100%;
+  animation: shine 4.5s linear infinite;
+  animation-delay: var(--d);
+  mix-blend-mode: screen;
+}
+@keyframes shine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+.face.back {
+  transform: rotateY(180deg);
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 9%, #1b1d26 9.5% 13%, transparent 13.5%),
+    linear-gradient(#1b1d26, #1b1d26) center / 100% 5% no-repeat,
+    radial-gradient(circle at 50% 50%, transparent 0 30%, rgba(0,0,0,.25) 31%),
+    linear-gradient(160deg, #d6322f 0 50%, #f4f1ea 50% 100%);
+  border: 5px solid #1b1d26;
+}
+/* Ohne echtes Bild: Platzhalter-Vorderseite im App-Stil */
+.face.front.empty {
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.08), transparent 40%),
+    linear-gradient(200deg, #2a2f3d, #171a23);
+  border: 5px solid #3a3f4d;
+}
+.face.front.empty::before {
+  content: ""; position: absolute; left: 10%; right: 10%; top: 12%; height: 42%;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(255,90,82,.35), rgba(255,181,71,.25));
+}
+
+.vignette {
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(60% 55% at 50% 50%, rgba(13,15,20,.0) 0%, rgba(13,15,20,.55) 60%, rgba(13,15,20,.92) 100%);
+}
+
+/* ---------- Ladepanel ---------- */
+main {
+  position: relative; z-index: 1;
+  min-height: 100%;
+  display: grid; place-items: center;
+  padding: 24px 16px;
+}
+.panel {
+  width: min(420px, 100%);
+  padding: 28px 28px 22px;
+  border-radius: 22px;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  text-align: center;
+}
+.brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px; }
+.brand h1 { font-size: 18px; letter-spacing: .02em; margin: 0; font-weight: 650; }
+.ball {
+  width: 22px; height: 22px; border-radius: 50%;
+  background:
+    radial-gradient(circle, #fff 0 22%, #1b1d26 23% 34%, transparent 35%),
+    linear-gradient(#1b1d26, #1b1d26) center / 100% 12% no-repeat,
+    linear-gradient(var(--accent) 0 50%, #f4f1ea 50%);
+  box-shadow: 0 0 0 2px #1b1d26;
+}
+
+.meter { position: relative; width: 210px; height: 210px; margin: 4px auto 14px; }
+.meter svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.track { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 12; }
+.bar {
+  fill: none; stroke: url(#grad); stroke-width: 12; stroke-linecap: round;
+  filter: drop-shadow(0 0 8px rgba(255, 110, 80, .55));
+  transition: stroke .4s;
+}
+.orbit { /* kleiner Lichtpunkt, der ständig kreist: zeigt, dass etwas passiert */
+  fill: none; stroke: rgba(255,255,255,.55); stroke-width: 3; stroke-linecap: round;
+  stroke-dasharray: 10 600;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: orbit 1.6s linear infinite;
+}
+@keyframes orbit { to { transform: rotate(360deg); } }
+.readout {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; gap: 2px;
+}
+.pct { font-size: 46px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.pct small { font-size: 20px; color: var(--muted); font-weight: 600; margin-left: 2px; }
+.phase { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+
+.label { font-size: 16px; font-weight: 600; min-height: 1.45em; }
+.detail { color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.45em; }
+
+.steps { list-style: none; margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--glass-line); text-align: left; }
+.steps li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; padding: 5px 2px; }
+.steps .name { font-weight: 550; }
+.steps .info { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.icon { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.2); position: relative; }
+li.running .icon { border-color: var(--accent-2); border-top-color: transparent; animation: orbit .9s linear infinite; }
+li.ok .icon { border-color: var(--ok); background: var(--ok); }
+li.ok .icon::after {
+  content: ""; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px;
+  border: solid #0d0f14; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+li.error .icon { border-color: var(--err); background: var(--err); }
+li.error .icon::after { content: "!"; position: absolute; inset: 0; display: grid; place-items: center; font: 700 12px/1 system-ui; color: #0d0f14; }
+
+.error-box {
+  display: none; margin-top: 16px; padding: 12px 14px; border-radius: 12px;
+  background: rgba(255, 77, 94, .12); border: 1px solid rgba(255, 77, 94, .4);
+  color: #ffd5d9; text-align: left; font-size: 14px;
+}
+body.error .error-box { display: block; }
+body.error .bar { stroke: var(--err); filter: drop-shadow(0 0 8px rgba(255, 77, 94, .6)); }
+body.error .orbit, body.done .orbit { display: none; }
+body.done .bar { stroke: var(--ok); filter: drop-shadow(0 0 10px rgba(60, 207, 142, .6)); }
+body.done .panel { animation: pop .5s ease-out; }
+@keyframes pop { 50% { transform: scale(1.03); } }
+body.leaving main, body.leaving .stage { transition: opacity .5s; opacity: 0; }
+
+@media (max-width: 520px) {
+  /* Hochformat: Karten über und unter dem Panel kreisen lassen */
+  .ring.front { top: 86%; }
+  .ring.back { top: 12%; }
+  .panel { padding: 22px 18px 18px; }
+  .meter { width: 176px; height: 176px; }
+  .pct { font-size: 38px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring, .card .bob, .face.front::after, .orbit, li.running .icon { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="stage" aria-hidden="true">
+  <div class="ring back" id="ringBack"></div>
+  <div class="ring front" id="ringFront"></div>
+</div>
+<div class="vignette" aria-hidden="true"></div>
+
+<main>
+  <section class="panel" role="status" aria-live="polite">
+    <div class="brand"><span class="ball" aria-hidden="true"></span><h1>Binder Tracker</h1></div>
+
+    <div class="meter">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ff5a52"/>
+            <stop offset="1" stop-color="#ffb547"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="60" cy="60" r="52"/>
+        <circle class="bar" id="bar" cx="60" cy="60" r="52"/>
+        <circle class="orbit" cx="60" cy="60" r="52"/>
+      </svg>
+      <div class="readout">
+        <div class="pct"><span id="pct">0</span><small>%</small></div>
+        <div class="phase" id="phase">Prüfe Daten</div>
+      </div>
+    </div>
+
+    <div class="label" id="label">Verbinde mit dem lokalen Server …</div>
+    <div class="detail" id="detail">&nbsp;</div>
+
+    <ul class="steps" id="steps"></ul>
+    <div class="error-box" id="error"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const CIRC = 2 * Math.PI * 52;
+  const bar = document.getElementById("bar");
+  bar.style.strokeDasharray = CIRC;
+  bar.style.strokeDashoffset = CIRC;
+  const $ = id => document.getElementById(id);
+
+  // ---- Karten-Karussell aufbauen ----
+  const faces = [];
+  function buildRing(el, n) {
+    for (let i = 0; i < n; i++) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.setProperty("--a", (360 / n) * i + "deg");
+      card.style.setProperty("--d", (-i * 0.7) + "s");
+      card.innerHTML = '<div class="bob"><div class="face front empty"></div><div class="face back"></div></div>';
+      el.appendChild(card);
+      faces.push(card.querySelector(".front"));
+    }
+  }
+  buildRing($("ringFront"), 14);
+  buildRing($("ringBack"), 10);
+
+  let pool = [];
+  function setFace(face, src) {
+    const img = new Image();
+    img.onload = () => {
+      face.classList.remove("empty");
+      face.style.backgroundImage = `url("${src}")`;
+    };
+    img.src = src;
+  }
+  async function loadCards(initial) {
+    try {
+      const r = await fetch("/api/karten", { cache: "no-store" });
+      pool = await r.json();
+    } catch { return; }
+    if (!pool.length) return;
+    if (initial) {
+      faces.forEach((f, i) => setFace(f, pool[i % pool.length]));
+    } else {
+      // ein paar zufällige Karten austauschen, damit Neues auftaucht
+      for (let k = 0; k < 4; k++) {
+        const f = faces[Math.floor(Math.random() * faces.length)];
+        setFace(f, pool[Math.floor(Math.random() * pool.length)]);
+      }
+    }
+  }
+  loadCards(true);
+  const cardTimer = setInterval(() => loadCards(faces.some(f => f.classList.contains("empty"))), 5000);
+
+  // ---- Fortschritt ----
+  let shown = 0, target = 0;
+  function draw() {
+    shown += (target - shown) * 0.12;
+    if (Math.abs(target - shown) < 0.5) shown = target;
+    bar.style.strokeDashoffset = CIRC * (1 - shown / 100);
+    $("pct").textContent = Math.floor(shown);
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  function renderSteps(steps) {
+    $("steps").innerHTML = steps.map(s => `
+      <li class="${s.state}">
+        <span class="icon" aria-hidden="true"></span>
+        <span class="name">${s.label}</span>
+        <span class="info">${s.detail}</span>
+      </li>`).join("");
+  }
+
+  let misses = 0, finished = false;
+  async function poll() {
+    let s;
+    try {
+      const r = await fetch("/api/status", { cache: "no-store" });
+      s = await r.json();
+      misses = 0;
+    } catch {
+      if (++misses > 4 && !finished) {
+        document.body.classList.add("error");
+        $("label").textContent = "Keine Verbindung zum Server";
+        $("detail").textContent = "";
+        $("error").textContent = "Das Startfenster wurde geschlossen oder ist abgestürzt. Bitte start.bat erneut ausführen.";
+        return;
+      }
+      return setTimeout(poll, 800);
+    }
+
+    target = s.percent;
+    renderSteps(s.steps);
+    const running = s.steps.find(x => x.state === "running");
+
+    if (s.state === "error") {
+      finished = true;
+      document.body.classList.add("error");
+      $("phase").textContent = "Fehler";
+      $("label").textContent = "Download fehlgeschlagen";
+      $("detail").textContent = "";
+      $("error").textContent = s.error + " Danach start.bat erneut ausführen.";
+      clearInterval(cardTimer);
+      return;
+    }
+    if (s.state === "done") {
+      finished = true;
+      target = 100;
+      document.body.classList.add("done");
+      $("phase").textContent = "Bereit";
+      $("label").textContent = "Alles geladen";
+      $("detail").textContent = "Öffne deinen Binder …";
+      const needed = s.steps.some(x => x.needed);
+      setTimeout(() => document.body.classList.add("leaving"), needed ? 1200 : 700);
+      setTimeout(() => location.replace("index.html"), needed ? 1700 : 1200);
+      return;
+    }
+    $("phase").textContent = running ? "Lade" : "Prüfe Daten";
+    $("label").textContent = running ? running.label + " werden geladen" : "Prüfe vorhandene Daten …";
+    $("detail").textContent = running ? running.detail : " ";
+    setTimeout(poll, 400);
+  }
+  poll();
+})();
+</script>
+</body>
+</html>
