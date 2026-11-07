@@ -273,6 +273,7 @@ function bindEvents() {
     if (b.dataset.mode !== "page") view.mode = b.dataset.mode;
     else if (!["page", "overview"].includes(view.mode)) view.mode = view.binderMode || "page";
     render();
+    scrollTo({ top: 0 });
   }));
   on("#filter", "change", e => { view.filter = e.target.value; render(); });
   on("#pageSelect", "change", e => { view.page = +e.target.value; render(); });
