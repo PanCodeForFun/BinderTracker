@@ -3,7 +3,10 @@ POKÉMON BINDER TRACKER
 
 Starten
 -------
-Doppelklick auf "index.html". Läuft komplett offline im Browser, ohne Installation.
+Doppelklick auf "start.bat" (oder: python start.py). Das prüft, ob Kartenbilder
+und deutsche Kartendaten da sind, lädt Fehlendes herunter (bricht mit Fehler ab,
+wenn das nicht geht) und öffnet die App unter http://127.0.0.1:8000.
+Beenden: Fenster schließen oder Strg+C.
 
 Bedienung
 ---------
@@ -46,6 +49,8 @@ js/store.js             Speichern, Online-Sync, Backup
 js/ui.js                Oberfläche und Bedienung
 data/                   erzeugte Daten (nicht von Hand ändern)
 tools/download_images.py lädt Kartenbilder nach images/
+tools/download_german.py lädt deutsche Set-Daten und Bilder (TCGdex) nach sources/
+start.py, start.bat     prüft/lädt Daten und startet die App auf 127.0.0.1
 tools/build_data.py     erzeugt data/ neu, z. B. wenn neue Sets erscheinen:
                         python tools/build_data.py
 

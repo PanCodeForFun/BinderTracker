@@ -68,6 +68,8 @@ def main():
             if i % 500 == 0:
                 print(f"{i}/{len(jobs)} …")
 
+    if jobs and counts["Fehler"] == len(jobs):
+        sys.exit("FEHLER: Keine Bilder geladen. Internetverbindung prüfen.")
     IMAGES.mkdir(exist_ok=True)
     (IMAGES / "available.js").write_text("window.LOCAL_IMAGES = true;\n", encoding="utf-8")
     print(f"Fertig: {counts['neu']} neu, {counts['da']} schon vorhanden, {counts['Fehler']} Fehler.")
