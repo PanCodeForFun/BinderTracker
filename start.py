@@ -36,7 +36,7 @@ DATA = [
     },
     {
         "label": "Deutsche Kartendaten",
-        "marker": "sources/tcgdex-de/fertig.txt",
+        "marker": "sources/tcgdex-de/fertig2.txt",
         "script": "tools/download_german.py",
         "phases": {"Sets": (0.0, 0.1), "Bilder": (0.1, 0.9)},
         "unit": "Bilder",

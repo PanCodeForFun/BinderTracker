@@ -15,11 +15,25 @@ const cardCache = new Map();
 
 // Bildquellen der Reihe nach: lokales Bild der gewählten Sprache, dann das der anderen,
 // zuletzt online. Lokal: images/ (tools/download_images.py), sources/images-de/ (tools/download_german.py).
+// big: große Bilder für die Vollansicht (nur online: TCGdex high.webp, pokemontcg.io _hires.png).
 function imageSources(setId, num, img, deSet, deNum) {
   const de = window.LOCAL_IMAGES_DE && deSet && deNum ? `sources/images-de/${deSet}/${safeName(deNum)}.webp` : "";
   const en = window.LOCAL_IMAGES ? `images/${setId}/${safeName(num)}.png` : "";
   const online = img?.startsWith("http") ? img : IMG_HOST + (img || `${setId}/${num}.png`);
-  return (LANG === "en" ? [en, de, online] : [de, en, online]).filter(Boolean);
+  const deBase = window.TCGDEX_DE?.[deSet];
+  const deBig = deBase && deNum ? `${deBase}/${deNum}/high.webp` : "";
+  const enBig = online.replace(/\.png$/, "_hires.png");
+  const byLang = (deFirst, enFirst) => (LANG === "en" ? enFirst : deFirst).filter(Boolean);
+  return { srcs: byLang([de, en, online], [en, de, online]), big: byLang([deBig, enBig], [enBig, deBig]) };
+}
+
+// Set-Logo (Booster-Bild in Kartenliste und Einkaufshilfe): lokal deutsch/englisch, sonst online.
+function logoSources(i) {
+  const [setId, , , , , , deSet] = TCG_SETS[i];
+  const de = window.LOCAL_LOGOS_DE?.includes(deSet) ? `sources/logos-de/${deSet}.webp` : "";
+  const en = window.LOCAL_IMAGES ? `images/logos/${setId}.png` : "";
+  const online = `${IMG_HOST}${setId}/logo.png`;
+  return (LANG === "en" ? [en, online, de] : [de, en, online]).filter(Boolean);
 }
 
 // Alle Karten eines Pokémon, nach Stufe und dann Erscheinungsdatum.
@@ -30,7 +44,7 @@ function cardsFor(n) {
       const [setId, setEn, , date, total, setDe, deSet] = TCG_SETS[setIdx];
       return {
         id: `${setId}-${num}`, date, total, num, cat, setIdx, rarity: TCG_RARITY_NAMES[rarityIdx],
-        name: (de && nameDe) || nameEn, set: (de && setDe) || setEn, srcs: imageSources(setId, num, img, deSet, deNum),
+        name: (de && nameDe) || nameEn, set: (de && setDe) || setEn, ...imageSources(setId, num, img, deSet, deNum),
         keys: [nameEn, nameDe, setEn, setDe].map(s => norm(s || "")).join(" "),  // für die Kartensuche
       };
     });

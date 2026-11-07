@@ -88,6 +88,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
     <div id="wlCards" class="wl-pane">
       <div class="wl-tools">
         <input id="wlSearch" type="search" autocomplete="off" data-i18n-ph="wlSearchPh" data-i18n-tip="wlSearchPh">
+        <select id="wlSet" data-i18n-tip="boosterLabel"></select>
         <select id="wlSort" data-i18n-tip="sortLabel"></select>
         <span id="wlCount" class="sub"></span>
       </div>
@@ -145,6 +146,11 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   <span id="confirmText"></span>
   <button id="confirmYes" class="ghost primary" data-i18n="load">Laden</button>
   <button id="confirmNo" class="ghost" data-i18n="cancel">Abbrechen</button>
+</div>
+
+<div id="zoom" class="zoom" hidden role="dialog" aria-modal="true">
+  <button id="zoomClose" class="x zoom-x" data-i18n-tip="close">×</button>
+  <figure id="zoomBox"></figure>
 </div>
 
 <div id="toast" class="toast" hidden></div>

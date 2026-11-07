@@ -53,7 +53,9 @@ async function connectWishLive(onChange) {
 }
 
 // ---------- Ansicht ----------
-const wl = { tab: "cards", query: "", sort: "new", limit: 60, hits: null };
+// set: gewählter Booster ("" = alle), page: wie oft "Nächstes Booster"/"Mehr anzeigen" gedrückt wurde
+const wl = { tab: "cards", query: "", sort: "new", set: "", page: 1, hits: null, counts: null };
+const PAGE = 60;
 
 const byNum = (a, b) => a.num.localeCompare(b.num, "en", { numeric: true });
 const rarer = (a, b) => RARITY[b.cat].rank - RARITY[a.cat].rank;
@@ -80,18 +82,70 @@ function cardTile(c) {
   </div>`;
 }
 
+// Alle Sets mit Karten, neuestes zuerst (für die Booster-Auswahl).
+let setOrder = null;
+const allSets = () => (setOrder ??= [...new Set([...allCards().values()].map(c => c.setIdx))].sort((a, b) => b - a));
+const grouped = () => wl.sort === "new" || wl.sort === "old";  // nach Erscheinen sortiert: mit Trennern je Booster
+const searching = () => !!wl.query.trim();
+
+// Sichtbare Karten: nach Booster sortiert immer ganze Booster (ohne Suche einer pro Klick,
+// mit Suche so viele, bis 60 Karten je Klick erreicht sind), sonst 60 Karten je Klick.
+function visibleCards() {
+  const hits = wl.hits;
+  if (!grouped()) return hits.slice(0, PAGE * wl.page);
+  if (wl.set !== "") return hits;
+  let end = 0, sets = 0;
+  while (end < hits.length && (searching() ? end < PAGE * wl.page : sets < wl.page)) {
+    const s = hits[end].setIdx;
+    while (end < hits.length && hits[end].setIdx === s) end++;
+    sets++;
+  }
+  return hits.slice(0, end);
+}
+
+// Nächster Booster in Sortierrichtung, wenn ein einzelner gewählt ist.
+function nextSet() {
+  const order = wl.sort === "old" ? [...allSets()].reverse() : allSets();
+  return order[order.indexOf(+wl.set) + 1];
+}
+
+const boosterSep = i => `<div class="wl-sep">
+    <div class="wl-logo">${imgChain(logoSources(i), 'alt=""')}</div>
+    <div><b>${esc(setName(i))}</b><div class="sub">${TCG_SETS[i][3].slice(0, 4)} · ${t("wlHits", { n: wl.counts[i] })}</div></div>
+  </div>`;
+
 function renderCardList() {
-  wl.hits ??= searchCards(wl.query).sort(SORTS[wl.sort]);
+  if (!wl.hits) {
+    wl.hits = searchCards(wl.query).filter(c => wl.set === "" || c.setIdx === +wl.set).sort(SORTS[wl.sort]);
+    wl.counts = countBy(wl.hits, c => c.setIdx);
+  }
+  const shown = visibleCards();
   $("#wlCount").textContent = t("wlHits", { n: wl.hits.length.toLocaleString(LANG) });
-  $("#wlGrid").innerHTML = wl.hits.slice(0, wl.limit).map(cardTile).join("") || `<p class="sub">${t("nothingFound")}</p>`;
-  $("#wlMore").hidden = wl.hits.length <= wl.limit;
+  $("#wlGrid").innerHTML = shown.map((c, i) =>
+    (grouped() && (!i || shown[i - 1].setIdx !== c.setIdx) ? boosterSep(c.setIdx) : "") + cardTile(c)).join("")
+    || `<p class="sub">${t("nothingFound")}</p>`;
+  const single = grouped() && wl.set !== "";
+  $("#wlMore").hidden = single ? nextSet() === undefined : shown.length >= wl.hits.length;
+  $("#wlMore").textContent = grouped() && !searching() ? t("nextBooster") : t("more");
+}
+
+function showMore() {
+  if (grouped() && wl.set !== "") {  // einzelner Booster: zum nächsten wechseln
+    Object.assign(wl, { set: String(nextSet()), page: 1, hits: null });
+    $("#wlSet").value = wl.set;
+    renderCardList();
+    $("#wlCards").scrollIntoView({ behavior: "smooth" });
+  } else {
+    wl.page++;
+    renderCardList();
+  }
 }
 
 // Gewünschte Karten als Karten, am längsten gewünschte zuerst.
 function wishListHtml() {
   const cards = [...wishlist].sort((a, b) => a[1] - b[1]).map(([id, at]) => ({ c: cardById(id), at })).filter(x => x.c);
   if (!cards.length) return `<p class="sub">${t("wishEmpty")}</p>`;
-  return `<div class="wl-grid">${cards.map(({ c, at }) => `<div class="wl-card wished">
+  return `<div class="wl-grid">${cards.map(({ c, at }) => `<div class="wl-card wished" data-card="${esc(c.id)}">
     ${cardImage(c, `<span>${esc(c.name)}</span>`)}
     <b>${esc(c.name)}</b>
     <span class="sub">${cardMeta(c)}</span>
@@ -108,9 +162,15 @@ function shopHtml() {
   for (const c of cards) bySet.set(c.setIdx, [...(bySet.get(c.setIdx) || []), c]);
   const sets = [...bySet].sort((a, b) => b[1].length - a[1].length || b[0] - a[0]);
   const block = ([i, list]) => `<div class="shop-set">
-    <div class="shop-head"><b>${esc(setName(i))}</b> <span class="sub">${TCG_SETS[i][3].slice(0, 4)}</span>
-      <span class="shop-n">${list.length === 1 ? t("shopOne") : t("shopCount", { n: list.length })}</span></div>
-    <div class="shop-cards">${list.map(c => `<div class="wl-thumb" title="${esc(c.name)} · ${esc(c.num)}">${cardImage(c)}</div>`).join("")}</div>
+    <div class="shop-main">
+      <div class="shop-head"><b>${esc(setName(i))}</b> <span class="sub">${TCG_SETS[i][3].slice(0, 4)}</span></div>
+      <div class="shop-cards">${list.map(c =>
+        `<div class="wl-thumb" data-card="${esc(c.id)}" title="${esc(c.name)} · ${esc(c.num)}">${cardImage(c)}</div>`).join("")}</div>
+    </div>
+    <div class="shop-side">
+      <span class="shop-n">${list.length === 1 ? t("shopOne") : t("shopCount", { n: list.length })}</span>
+      <div class="wl-logo shop-logo">${imgChain(logoSources(i), `alt="${esc(setName(i))}"`)}</div>
+    </div>
   </div>`;
   const boosters = sets.filter(([i]) => !NON_BOOSTER.test(TCG_SETS[i][1]));
   const singles = sets.filter(([i]) => NON_BOOSTER.test(TCG_SETS[i][1]));
@@ -136,14 +196,17 @@ function toggleWish(id) {
 
 function bindWishEvents() {
   $("#wlSort").innerHTML = Object.entries(SORT_LABELS).map(([k, label]) => `<option value="${k}">${t(label)}</option>`).join("");
+  $("#wlSet").innerHTML = `<option value="">${t("allBoosters")}</option>` +
+    allSets().map(i => `<option value="${i}">${esc(setName(i))} (${TCG_SETS[i][3].slice(0, 4)})</option>`).join("");
+  const refresh = changes => { Object.assign(wl, { page: 1, hits: null }, changes); renderCardList(); };
   let timer;
-  on("#wlSearch", "input", e => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { Object.assign(wl, { query: e.target.value, limit: 60, hits: null }); renderCardList(); }, 150);
-  });
-  on("#wlSort", "change", e => { Object.assign(wl, { sort: e.target.value, limit: 60, hits: null }); renderCardList(); });
-  on("#wlMore", "click", () => { wl.limit += 60; renderCardList(); });
+  on("#wlSearch", "input", e => { clearTimeout(timer); timer = setTimeout(() => refresh({ query: e.target.value }), 150); });
+  on("#wlSet", "change", e => refresh({ set: e.target.value }));
+  on("#wlSort", "change", e => refresh({ sort: e.target.value }));
+  on("#wlMore", "click", showMore);
   onClosest("#wlGrid", "click", "[data-star]", b => toggleWish(b.closest(".wl-card").dataset.card));
   onClosest("#wlSide", "click", "[data-unwish]", b => toggleWish(b.dataset.unwish));
+  // Klick aufs Kartenbild: Vollansicht
+  onClosest("#wishView", "click", "[data-card] .cardbox", box => openZoom(cardById(box.closest("[data-card]").dataset.card)));
   document.querySelectorAll(".wtab").forEach(b => (b.onclick = () => { wl.tab = b.dataset.wtab; renderWishView(); scrollTo({ top: 0 }); }));
 }
