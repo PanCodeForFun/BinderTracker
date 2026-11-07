@@ -30,7 +30,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 ## Usage
 
-Open `index.html` in a browser. No installation or build step is needed. The collection is saved in the browser's local storage, so use **Backup speichern** regularly.
+Run `python start.py` (on Windows: double-click `start.bat`). It checks that the card images and the German card data are on disk, downloads anything missing, stops with an error if the download fails, and then serves the app at http://127.0.0.1:8000. Opening `index.html` directly still works too. The collection is saved in the browser's local storage, so use **Backup speichern** regularly.
 
 The interface is in German.
 
@@ -45,6 +45,8 @@ The interface is in German.
 | `data/` | Generated data files, do not edit by hand |
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
+| `tools/download_german.py` | Downloads German set data and card images from TCGdex to `sources/` |
+| `start.py`, `start.bat` | Checks/downloads data, then serves the app on 127.0.0.1 |
 
 ### Offline card images
 
@@ -70,6 +72,7 @@ This downloads the latest Pokémon names, sprites and card data and rewrites the
 ## Data sources
 
 - Pokémon names and sprites: [PokeAPI](https://github.com/PokeAPI)
+- German set data and card images: [TCGdex](https://github.com/tcgdex/cards-database)
 - Card data: [PokemonTCG/pokemon-tcg-data](https://github.com/PokemonTCG/pokemon-tcg-data), card images from images.pokemontcg.io
 
 ## License
