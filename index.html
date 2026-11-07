@@ -15,10 +15,11 @@
 
   <div class="tools">
     <span id="status" class="status wait"></span>
-    <button id="btnStats" class="ghost">Statistik</button>
-    <button id="btnExport" class="ghost" title="Sammlung als Datei sichern">Backup speichern</button>
-    <label class="ghost" title="Gesicherte Datei wieder laden">
-      Backup laden<input id="fileImport" type="file" accept=".json,application/json" hidden>
+    <select id="lang" class="lang" data-i18n-tip="language"></select>
+    <button id="btnStats" class="ghost" data-i18n="stats">Statistik</button>
+    <button id="btnExport" class="ghost" data-i18n="backupSave" data-i18n-tip="backupSaveTip">Backup speichern</button>
+    <label class="ghost" data-i18n-tip="backupLoadTip">
+      <span data-i18n="backupLoad">Backup laden</span><input id="fileImport" type="file" accept=".json,application/json" hidden>
     </label>
   </div>
 </header>
@@ -30,17 +31,17 @@
   </div>
 
   <div class="views">
-    <button class="view" data-view="page">Seite</button>
-    <button class="view" data-view="overview">Übersicht</button>
+    <button class="view" data-view="page" data-i18n="page">Seite</button>
+    <button class="view" data-view="overview" data-i18n="overview">Übersicht</button>
   </div>
 
 
   <div class="filter">
-    <label>Anzeigen
+    <label><span data-i18n="show">Anzeigen</span>
       <select id="filter">
-        <option value="all">alle</option>
-        <option value="missing">nur fehlende</option>
-        <option value="have">nur vorhandene</option>
+        <option value="all" data-i18n="all">alle</option>
+        <option value="missing" data-i18n="onlyMissing">nur fehlende</option>
+        <option value="have" data-i18n="onlyHave">nur vorhandene</option>
       </select>
     </label>
   </div>
@@ -48,16 +49,16 @@
 
 <main>
   <div class="search">
-    <input id="search" type="search" autocomplete="off" placeholder="Pokémon suchen (Deutsch, Englisch oder Nummer)…" aria-label="Pokémon suchen">
+    <input id="search" type="search" autocomplete="off" placeholder="Pokémon suchen (Deutsch, Englisch oder Nummer)…" data-i18n-ph="searchPh" data-i18n-tip="searchLabel">
     <ul id="suggest" class="suggest" hidden></ul>
   </div>
   <section id="pageView" class="page-wrap">
     <div class="page-head">
       <div class="page-name"><h2 id="pageTitle"></h2><span id="pageRange"></span></div>
       <div class="pager">
-        <button id="prev" aria-label="Vorherige Seite">‹</button>
-        <label>Seite <select id="pageSelect"></select> <span id="pageCount"></span></label>
-        <button id="next" aria-label="Nächste Seite">›</button>
+        <button id="prev" data-i18n-tip="prevPage">‹</button>
+        <label><span data-i18n="page">Seite</span> <select id="pageSelect"></select> <span id="pageCount"></span></label>
+        <button id="next" data-i18n-tip="nextPage">›</button>
       </div>
       <span id="pageProgress" class="page-progress"></span>
     </div>
@@ -72,37 +73,39 @@
   <div class="modal-head">
     <img id="pickerSprite" class="spr" alt="">
     <div><strong id="pickerTitle"></strong><div id="pickerSub" class="sub"></div></div>
-    <button id="pickerClose" class="x" aria-label="Schließen">×</button>
+    <button id="pickerClose" class="x" data-i18n-tip="close">×</button>
   </div>
   <div id="designs" class="designs"></div>
   <div class="modal-foot">
-    <label class="note">Notiz <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …"></label>
+    <label class="note"><span data-i18n="note">Notiz</span> <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …" data-i18n-ph="notePh"></label>
     <div class="foot-btns">
-      <button id="btnClear" class="ghost">Slot leeren</button>
-      <select id="noDesignRarity" aria-label="Seltenheit ohne Design"></select>
-      <button id="btnNoDesign" class="ghost">Ohne Design</button>
+      <button id="btnClear" class="ghost" data-i18n="clearSlot">Slot leeren</button>
+      <select id="noDesignRarity" data-i18n-tip="noDesignRarity"></select>
+      <button id="btnNoDesign" class="ghost" data-i18n="noDesign">Ohne Design</button>
     </div>
   </div>
 </div>
 
 <div id="statsModal" class="modal stats-modal" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-  <div class="modal-head"><strong id="statsTitle">Statistik</strong><button id="statsClose" class="x" aria-label="Schließen">×</button></div>
+  <div class="modal-head"><strong id="statsTitle" data-i18n="stats">Statistik</strong><button id="statsClose" class="x" data-i18n-tip="close">×</button></div>
   <div id="statsBody"></div>
 </div>
 
 <div id="confirm" class="confirm" hidden role="alertdialog">
   <span id="confirmText"></span>
-  <button id="confirmYes" class="ghost primary">Laden</button>
-  <button id="confirmNo" class="ghost">Abbrechen</button>
+  <button id="confirmYes" class="ghost primary" data-i18n="load">Laden</button>
+  <button id="confirmNo" class="ghost" data-i18n="cancel">Abbrechen</button>
 </div>
 
 <div id="toast" class="toast" hidden></div>
 
 <script src="images/available.js"></script>
+<script src="sources/images-de/available.js"></script>
 <script src="data/pokedex.js"></script>
 <script src="data/sprites.js"></script>
 <script src="data/cards.js"></script>
 <script src="js/config.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/data.js"></script>
 <script src="js/store.js"></script>
 <script src="js/ui.js"></script>

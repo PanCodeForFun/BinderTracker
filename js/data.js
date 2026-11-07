@@ -1,6 +1,7 @@
 // Pokédex, Kartendaten, Binder-Positionen und Suche.
 
-const DEX = POKEDEX.map(([n, de, en]) => ({ n, de, en }));
+// name = Anzeigename in der gewählten Sprache, alt = der andere Name
+const DEX = POKEDEX.map(([n, de, en]) => ({ n, de, en, name: LANG === "en" ? en : de, alt: LANG === "en" ? de : en }));
 const BY_N = new Map(DEX.map(p => [p.n, p]));
 const MAX_N = DEX[DEX.length - 1].n;
 
@@ -9,18 +10,28 @@ const spriteUrl = n => SPRITES[n] || "";
 
 // ---------- Karten ----------
 const IMG_HOST = "https://images.pokemontcg.io/";
-// Lokale Kopie der Kartenbilder (tools/download_images.py), Dateiname wie im Skript.
-const localImage = (setId, num) => `images/${setId}/${num.replace(/[^A-Za-z0-9_-]/g, "_")}.png`;
+const safeName = s => s.replace(/[^A-Za-z0-9_-]/g, "_");
 const cardCache = new Map();
+
+// Bildquellen der Reihe nach: lokales Bild der gewählten Sprache, dann das der anderen,
+// zuletzt online. Lokal: images/ (tools/download_images.py), sources/images-de/ (tools/download_german.py).
+function imageSources(setId, num, img, deSet, deNum) {
+  const de = window.LOCAL_IMAGES_DE && deSet && deNum ? `sources/images-de/${deSet}/${safeName(deNum)}.webp` : "";
+  const en = window.LOCAL_IMAGES ? `images/${setId}/${safeName(num)}.png` : "";
+  const online = img?.startsWith("http") ? img : IMG_HOST + (img || `${setId}/${num}.png`);
+  return (LANG === "en" ? [en, de, online] : [de, en, online]).filter(Boolean);
+}
 
 // Alle Karten eines Pokémon, nach Stufe und dann Erscheinungsdatum.
 function cardsFor(n) {
   if (!cardCache.has(n)) {
-    const cards = (TCG_CARDS[n] || []).map(([setIdx, num, cat, name, rarityIdx, img]) => {
-      const [setId, set, , date, total] = TCG_SETS[setIdx];
-      const small = img?.startsWith("http") ? img : IMG_HOST + (img || `${setId}/${num}.png`);
-      const local = localImage(setId, num);
-      return { id: `${setId}-${num}`, set, date, total, num, cat, name, rarity: TCG_RARITY_NAMES[rarityIdx], small, local, setIdx };
+    const de = LANG !== "en";
+    const cards = (TCG_CARDS[n] || []).map(([setIdx, num, cat, nameEn, rarityIdx, img, nameDe, deNum]) => {
+      const [setId, setEn, , date, total, setDe, deSet] = TCG_SETS[setIdx];
+      return {
+        id: `${setId}-${num}`, date, total, num, cat, setIdx, rarity: TCG_RARITY_NAMES[rarityIdx],
+        name: (de && nameDe) || nameEn, set: (de && setDe) || setEn, srcs: imageSources(setId, num, img, deSet, deNum),
+      };
     });
     cards.sort((a, b) => RARITY[a.cat].tierRank - RARITY[b.cat].tierRank || a.setIdx - b.setIdx || a.num.localeCompare(b.num, "en", { numeric: true }));
     cardCache.set(n, cards);
@@ -41,9 +52,7 @@ const inBinder = (binder, n) => (binder === 1) === (n <= LAYOUT.binder1Size);
 const pageCount = binder =>
   Math.max(1, Math.ceil((binder === 1 ? Math.min(MAX_N, LAYOUT.binder1Size) : MAX_N - LAYOUT.binder1Size) / LAYOUT.slotsPerPage));
 
-const ROWS = ["oben", "2. Reihe", "3. Reihe", "unten"];
-const COLS = ["links", "2. von links", "3. von links", "rechts"];
-const slotText = ({ row, col }) => `${ROWS[row - 1]} ${COLS[col - 1]}`;
+const slotText = ({ row, col }) => `${t("rows")[row - 1]} ${t("cols")[col - 1]}`;
 
 // ---------- Suche ----------
 const norm = s => s.toLowerCase().replace(/♀/g, "w").replace(/♂/g, "m")

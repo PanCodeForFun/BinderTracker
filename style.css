@@ -242,3 +242,6 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 @media (prefers-reduced-motion: reduce), (max-width: 760px) {
   .slot.flash { animation: none; outline: 3px solid var(--focus); }
 }
+
+/* Sprachauswahl im Kopf */
+.lang { padding: 7px 8px; border-radius: 10px; font-size: 14px; }
