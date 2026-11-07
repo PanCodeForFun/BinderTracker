@@ -8,7 +8,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 ## Features
 
-- **Four sections** in the top bar: Binder, Wishlist, Statistics and Data (language, backup, storage).
+- **Four sections** in the top bar: Binder, Wishlist, Statistics and Options (language, backup, storage), each with an icon.
 
 - **Full National Dex** (#1–#1025) laid out as 4×4 binder pages. Slot 1 is top left, slot 16 bottom right, page 2 starts with #17.
 - **Two binders**: Binder 1 holds #1–#640 (40 pages), Binder 2 starts at #641 and grows with new generations.
@@ -17,7 +17,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **Reverse Holo** option on every normal and holo card.
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
 - **Statistics** for collection progress per binder and per rarity tier.
-- **Wishlist** view: search all ~17,400 cards by Pokémon, card name, set (German or English) or number, mark cards with ★, and see wished cards grouped by set. Cards you put into the binder leave the wishlist automatically. A **shopping helper** ranks booster sets by how many empty slots (gaps) and rarer upgrades they offer for your binder; promos, trainer kits and similar can be shown with a checkbox.
+- **Wishlist** with three tabs: the **card list** shows all ~17,400 cards (newest set first, then rarest; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets from your wished cards, with promos and similar listed separately as singles.
 - **Backup** of the collection and wishlist as a JSON file, which can be restored on any device.
 - Works fully offline when opened locally. Names, sprites and card data ship with the app; card images can be downloaded once (see below).
 

@@ -22,10 +22,18 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   </div>
 
   <nav class="mainnav" aria-label="Bereiche">
-    <button class="sect" data-mode="page" data-i18n="binder">Binder</button>
-    <button class="sect" data-mode="wish" data-i18n="wish">Wunschliste</button>
-    <button class="sect" data-mode="stats" data-i18n="stats">Statistik</button>
-    <button class="sect" data-mode="data" data-i18n="data">Daten</button>
+    <button class="sect" data-mode="page">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M4 12h16"/></svg>
+      <span data-i18n="binder">Binder</span></button>
+    <button class="sect" data-mode="wish">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>
+      <span data-i18n="wish">Wunschliste</span></button>
+    <button class="sect" data-mode="stats">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>
+      <span data-i18n="stats">Statistik</span></button>
+    <button class="sect" data-mode="data">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      <span data-i18n="data">Optionen</span></button>
   </nav>
 
   <span id="status" class="status wait"></span>
@@ -72,19 +80,21 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   </section>
   <section id="overView" class="overview" hidden></section>
   <section id="wishView" class="wishview" hidden>
-    <div class="wl-pane">
-      <div class="wl-head"><h2 data-i18n="cardList">Kartenliste</h2><span id="wlCount" class="sub"></span></div>
-      <input id="wlSearch" type="search" autocomplete="off" data-i18n-ph="wlSearchPh" data-i18n-tip="wlSearchPh">
+    <div class="views wl-tabs">
+      <button class="wtab" data-wtab="cards" data-i18n="cardList">Kartenliste</button>
+      <button class="wtab" data-wtab="list"><span data-i18n="wish">Wunschliste</span> <small id="wlNum"></small></button>
+      <button class="wtab" data-wtab="shop" data-i18n="shop">Einkaufshilfe</button>
+    </div>
+    <div id="wlCards" class="wl-pane">
+      <div class="wl-tools">
+        <input id="wlSearch" type="search" autocomplete="off" data-i18n-ph="wlSearchPh" data-i18n-tip="wlSearchPh">
+        <select id="wlSort" data-i18n-tip="sortLabel"></select>
+        <span id="wlCount" class="sub"></span>
+      </div>
       <div id="wlGrid" class="wl-grid"></div>
       <button id="wlMore" class="ghost wl-more" data-i18n="more">Mehr anzeigen</button>
     </div>
-    <div class="wl-pane">
-      <div class="views wl-tabs">
-        <button class="wtab" data-wtab="list"><span data-i18n="wish">Wunschliste</span> <small id="wlNum"></small></button>
-        <button class="wtab" data-wtab="shop" data-i18n="shop">Einkaufshilfe</button>
-      </div>
-      <div id="wlSide"></div>
-    </div>
+    <div id="wlSide" class="wl-pane" hidden></div>
   </section>
   <section id="statsView" class="panel-view" hidden>
     <h2 data-i18n="stats">Statistik</h2>

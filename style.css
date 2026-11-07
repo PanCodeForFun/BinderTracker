@@ -60,7 +60,8 @@ select { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); ba
 .ball { width: 22px; height: 22px; border-radius: 50%; position: relative; border: 2px solid var(--ink); background: linear-gradient(var(--accent) 0 46%, var(--ink) 46% 54%, #fff 54%); }
 .ball::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); }
 .mainnav { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--empty); margin-inline: auto; }
-.sect { border: 0; background: transparent; padding: 8px 18px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.sect { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; padding: 8px 18px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.ico { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sect:hover { color: var(--ink); }
 .sect.on { background: var(--accent); color: #fff; box-shadow: var(--shadow); }
 .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
@@ -255,11 +256,13 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .lang { padding: 7px 8px; border-radius: 10px; font-size: 14px; }
 
 /* Wunschliste */
-.wishview { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.wishview { display: block; }
 .wl-pane { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
 .wl-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .wl-head h2 { margin: 0; font-size: 18px; }
-#wlSearch { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); margin-bottom: 12px; }
+.wl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+#wlSearch { flex: 1 1 260px; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+#wlSort { padding: 8px; border-radius: 10px; }
 .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
 .wl-card { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 6px; border-radius: 10px; background: var(--bg); border: 2px solid transparent; font-size: 12px; min-width: 0; }
 .wl-card.wished { border-color: var(--warn); }
@@ -272,8 +275,8 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .wished .star { background: var(--warn); border-color: var(--warn); color: #111; }
 .inb { align-self: flex-start; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); font-size: 11px; font-weight: 600; }
 .wl-more { display: block; margin: 14px auto 0; }
-.wl-tabs { margin-bottom: 12px; }
-.wtab { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; flex: 1; }
+.wl-tabs { max-width: 560px; margin: 0 auto 14px; }
+.wtab { border: 0; background: transparent; padding: 8px 12px; border-radius: 8px; flex: 1; white-space: nowrap; }
 .wtab.on { background: var(--panel); box-shadow: var(--shadow); font-weight: 600; }
 .wl-set { display: flex; justify-content: space-between; margin: 14px 0 6px; font-size: 13px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
 .wl-set:first-child { margin-top: 0; }
@@ -288,7 +291,7 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .shop td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--line); }
 .shop td small { color: var(--muted); }
 @media (max-width: 900px) {
-  .wishview { grid-template-columns: 1fr; }
+  .wtab { padding: 8px 6px; font-size: 14px; }
   .wl-pane { padding: 10px; }
   .wl-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
 }.shop-wrap { overflow-x: auto; }
@@ -297,3 +300,11 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
   .shop th, .shop td { padding: 4px 3px; }
   .shop th { white-space: normal; hyphens: auto; }
 }
+/* Wunschliste als Karten, Einkaufshilfe */
+.unwish { margin-top: 4px; padding: 6px 8px; font-size: 12px; white-space: normal; }
+.shop-set { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.shop-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 8px; }
+.shop-n { margin-left: auto; padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--warn) 22%, transparent); font-size: 12px; font-weight: 600; }
+.shop-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.shop-cards .wl-thumb .cardbox { width: 56px; }
+@media (max-width: 760px) { .sect { flex-direction: column; gap: 2px; font-size: 12px; padding: 6px 4px; } }
