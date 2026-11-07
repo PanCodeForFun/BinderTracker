@@ -18,6 +18,14 @@ Tracker für meine Pokémon-Karten-Binder: der komplette Nationaldex (#1 bis #10
 
 `index.html` im Browser öffnen. Keine Installation nötig. Kartenbilder werden aus dem Internet geladen.
 
+## Aufbau
+
+- `js/config.js` Einstellungen (Binder-Größe, Seltenheiten)
+- `js/data.js` Pokédex, Karten, Binder-Positionen, Suche
+- `js/store.js` Speichern, Online-Sync, Backup
+- `js/ui.js` Oberfläche
+- `data/` erzeugt von `python tools/build_data.py` (neue Sets: einfach erneut ausführen)
+
 ## Daten
 
 - Pokémon-Namen und Bilder: [PokeAPI](https://github.com/PokeAPI)
