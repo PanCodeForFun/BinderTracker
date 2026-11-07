@@ -15,8 +15,10 @@ Bedienung
   Tippe deine Karte an. Hast du sie als Reverse Holo, tippe auf "Reverse".
   Ohne passende Karte: Seltenheit unten wählen und "Ohne Design".
   "Slot leeren" entfernt den Eintrag.
-- Kartenbilder werden aus dem Internet geladen (images.pokemontcg.io).
-  Ohne Internet siehst du stattdessen Set und Kartennummer.
+- Kartenbilder kommen aus dem Internet (images.pokemontcg.io). Für eine
+  lokale Kopie einmal ausführen:  python tools/download_images.py
+  Danach nutzt die App die Bilder aus dem Ordner images/ automatisch.
+  Ohne Bild siehst du stattdessen Set und Kartennummer.
 - "Statistik" oben zeigt, wie viele Karten du je Seltenheit hast.
 - Pfeiltasten links/rechts blättern, "/" springt in die Suche.
 - "Übersicht" zeigt alle Seiten eines Binders als kleine 4x4-Raster.
@@ -43,6 +45,7 @@ js/data.js              Pokédex, Kartendaten, Binder-Positionen, Suche
 js/store.js             Speichern, Online-Sync, Backup
 js/ui.js                Oberfläche und Bedienung
 data/                   erzeugte Daten (nicht von Hand ändern)
+tools/download_images.py lädt Kartenbilder nach images/
 tools/build_data.py     erzeugt data/ neu, z. B. wenn neue Sets erscheinen:
                         python tools/build_data.py
 

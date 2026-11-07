@@ -9,6 +9,8 @@ const spriteUrl = n => SPRITES[n] || "";
 
 // ---------- Karten ----------
 const IMG_HOST = "https://images.pokemontcg.io/";
+// Lokale Kopie der Kartenbilder (tools/download_images.py), Dateiname wie im Skript.
+const localImage = (setId, num) => `images/${setId}/${num.replace(/[^A-Za-z0-9_-]/g, "_")}.png`;
 const cardCache = new Map();
 
 // Alle Karten eines Pokémon, nach Stufe und dann Erscheinungsdatum.
@@ -17,7 +19,8 @@ function cardsFor(n) {
     const cards = (TCG_CARDS[n] || []).map(([setIdx, num, cat, name, rarityIdx, img]) => {
       const [setId, set, , date, total] = TCG_SETS[setIdx];
       const small = img?.startsWith("http") ? img : IMG_HOST + (img || `${setId}/${num}.png`);
-      return { id: `${setId}-${num}`, set, date, total, num, cat, name, rarity: TCG_RARITY_NAMES[rarityIdx], small, setIdx };
+      const local = localImage(setId, num);
+      return { id: `${setId}-${num}`, set, date, total, num, cat, name, rarity: TCG_RARITY_NAMES[rarityIdx], small, local, setIdx };
     });
     cards.sort((a, b) => RARITY[a.cat].tierRank - RARITY[b.cat].tierRank || a.setIdx - b.setIdx || a.num.localeCompare(b.num, "en", { numeric: true }));
     cardCache.set(n, cards);

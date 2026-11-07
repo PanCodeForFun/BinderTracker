@@ -16,7 +16,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
 - **Statistics** for collection progress per binder and per rarity tier.
 - **Backup** of the collection as a JSON file, which can be restored on any device.
-- Works offline when opened locally. Card images load from the internet when available.
+- Works fully offline when opened locally. Names, sprites and card data ship with the app; card images can be downloaded once (see below).
 
 ### Rarity tiers
 
@@ -44,6 +44,18 @@ The interface is in German.
 | `js/ui.js` | User interface |
 | `data/` | Generated data files, do not edit by hand |
 | `tools/build_data.py` | Regenerates `data/` |
+| `tools/download_images.py` | Downloads card images to `images/` |
+
+### Offline card images
+
+Card images normally load from images.pokemontcg.io. To keep a local copy that works without internet or if that service goes away, run:
+
+```sh
+python tools/download_images.py                     # all cards (~17,400 images)
+python tools/download_images.py binder-backup.json  # only the cards in a backup
+```
+
+Images are saved to `images/` and the app uses them automatically, falling back to the internet for anything missing. The download can be interrupted and resumed. `images/` is excluded from git because of its size.
 
 ### Updating card data
 
