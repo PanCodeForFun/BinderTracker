@@ -1,5 +1,7 @@
 # BinderTracker
 
+I bully claude into making me a nice lil tracker for my card binder. Lazy collector mode: on
+
 Tracker für meine Pokémon-Karten-Binder: der komplette Nationaldex (#1 bis #1025) als 4x4-Binderseiten, mit Seltenheit und Kartendesign pro Slot.
 
 **Online:** https://pancodeforfun.github.io/BinderTracker/
