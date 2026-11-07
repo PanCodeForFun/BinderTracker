@@ -9,20 +9,29 @@ const LAYOUT = {
 const STORAGE_KEY = "pokebinder.v1";  // Browser-Speicher
 const DB_COLLECTION = "karten";       // Online-Speicher (nur claude.ai)
 
-// Von häufig nach selten. Die id wird gespeichert, Label und Farbe sind frei.
-// Die id entspricht der Kartenkategorie in data/cards.js (außer reverse).
+// Fünf Stufen von häufig nach selten. Sie bestimmen Gruppen, Farben und Statistik.
+const TIERS = [
+  { id: "base",   label: "Normal",                          color: "#9aa3ad", ink: "#111" },
+  { id: "holo",   label: "Holo, Reverse & Promo",           color: "#4f9fe0", ink: "#fff" },
+  { id: "rule",   label: "ex, V, GX & Co.",                 color: "#8a5cd6", ink: "#fff" },
+  { id: "art",    label: "Full Art, Illustration & Shiny",  color: "#e0559a", ink: "#fff" },
+  { id: "secret", label: "Special Illustration & Secret",   color: "#d4a514", ink: "#111" },
+];
+
+// Genaue Seltenheit, von häufig nach selten. Die id wird gespeichert und
+// entspricht der Kartenkategorie in data/cards.js (außer reverse).
 const RARITIES = [
-  { id: "normal",  label: "Normal",                    color: "#9aa3ad", ink: "#111" },
-  { id: "reverse", label: "Reverse Holo",              color: "#7cc4c9", ink: "#111" },
-  { id: "holo",    label: "Holo",                      color: "#4f9fe0", ink: "#fff" },
-  { id: "promo",   label: "Promo",                     color: "#6b8f5e", ink: "#fff" },
-  { id: "shiny",   label: "Shiny",                     color: "#2bb39b", ink: "#fff" },
-  { id: "ex",      label: "EX / GX / V / ex",          color: "#8a5cd6", ink: "#fff" },
-  { id: "vmax",    label: "VMAX / VSTAR",              color: "#b04fc4", ink: "#fff" },
-  { id: "fullart", label: "Full Art",                  color: "#e0559a", ink: "#fff" },
-  { id: "ir",      label: "Illustration Rare",         color: "#f07a3a", ink: "#111" },
-  { id: "sir",     label: "Special Illustration Rare", color: "#e2402f", ink: "#fff" },
-  { id: "hyper",   label: "Hyper / Gold / Rainbow",    color: "#d4a514", ink: "#111" },
+  { id: "normal",  label: "Normal",                    tier: "base" },
+  { id: "reverse", label: "Reverse Holo",              tier: "holo" },
+  { id: "holo",    label: "Holo",                      tier: "holo" },
+  { id: "promo",   label: "Promo",                     tier: "holo" },
+  { id: "ex",      label: "EX / GX / V / ex",          tier: "rule" },
+  { id: "vmax",    label: "VMAX / VSTAR",              tier: "rule" },
+  { id: "shiny",   label: "Shiny",                     tier: "art" },
+  { id: "fullart", label: "Full Art",                  tier: "art" },
+  { id: "ir",      label: "Illustration Rare",         tier: "art" },
+  { id: "sir",     label: "Special Illustration Rare", tier: "secret" },
+  { id: "hyper",   label: "Hyper / Gold / Rainbow",    tier: "secret" },
 ];
 
 // Diese Kategorien gibt es auch als Reverse Holo.
@@ -42,4 +51,8 @@ const RARITY_SYMBOLS = [
 ];
 const symbolFor = rarityName => RARITY_SYMBOLS.find(([, names]) => names.includes(rarityName))?.[0] || "★";
 
-const RARITY = Object.fromEntries(RARITIES.map((r, rank) => [r.id, { ...r, rank }]));
+const TIER = Object.fromEntries(TIERS.map((t, rank) => [t.id, { ...t, rank }]));
+const RARITY = Object.fromEntries(RARITIES.map((r, rank) => {
+  const { color, ink, rank: tierRank } = TIER[r.tier];
+  return [r.id, { ...r, rank, tierRank, color, ink }];
+}));

@@ -3,7 +3,8 @@
 const $ = sel => document.querySelector(sel);
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-const rarityStyle = r => (r ? `style="--r:${r.color};--rInk:${r.ink}"` : "");
+const countBy = (items, key) => items.reduce((acc, x) => ((acc[key(x)] = (acc[key(x)] || 0) + 1), acc), {});
+const colorStyle = r => (r ? `style="--r:${r.color};--rInk:${r.ink}"` : "");
 
 const view = { binder: 1, page: 1, mode: "page", filter: "all" };
 
@@ -66,7 +67,7 @@ function slotHtml(n) {
     : `<img class="spr" src="${spriteUrl(n)}" alt="">`;
   const sub = card ? `${card.set} · ${card.num}` : p.en !== p.de ? p.en : "";
 
-  return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${rarityStyle(r)}>
+  return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
     <div class="de">${esc(p.de)}</div>
@@ -92,7 +93,7 @@ function renderOverview() {
     const numbers = Array.from({ length: LAYOUT.slotsPerPage }, (_, i) => start + i);
     const cells = numbers.map(n => {
       const p = BY_N.get(n), r = RARITY[owned(n)?.r];
-      return `<span class="${!p ? "void" : r ? "have" : ""}" ${rarityStyle(r)} title="${p ? esc(pad(n) + " " + p.de) : "frei"}"></span>`;
+      return `<span class="${!p ? "void" : r ? "have" : ""}" ${colorStyle(r)} title="${p ? esc(pad(n) + " " + p.de) : "frei"}"></span>`;
     });
     const have = numbers.filter(owned).length, real = numbers.filter(n => BY_N.has(n)).length;
     html += `<button class="mini" data-page="${page}"><div class="t"><b>Seite ${page}</b><span>${have}/${real}</span></div><div class="g">${cells.join("")}</div></button>`;
@@ -153,16 +154,16 @@ function openPicker(n) {
   $("#designs").scrollTop = 0;
 }
 
-// Alle Karten, gruppiert nach Seltenheit (cardsFor ist schon so sortiert).
+// Alle Karten, gruppiert nach Stufe (cardsFor ist schon so sortiert).
 function renderPicker() {
   const e = owned(pick.n), cards = cardsFor(pick.n);
-  const counts = {};
-  cards.forEach(c => (counts[c.cat] = (counts[c.cat] || 0) + 1));
+  const tierOf = c => RARITY[c.cat].tier;
+  const counts = countBy(cards, tierOf);
   $("#btnClear").disabled = !e;
   $("#designs").innerHTML = !cards.length ? `<p class="sub">Keine Karten bekannt. Nutze „Ohne Design“.</p>` : cards.map((c, i) => {
-    const r = RARITY[c.cat];
-    const head = c.cat !== cards[i - 1]?.cat ? `<h4 class="group" ${rarityStyle(r)}><i></i>${esc(r.label)} <small>${counts[c.cat]}</small></h4>` : "";
-    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${rarityStyle(r)}>
+    const t = TIER[tierOf(c)];
+    const head = i && tierOf(cards[i - 1]) === t.id ? "" : `<h4 class="group" ${colorStyle(t)}><i></i>${esc(t.label)} <small>${counts[t.id]}</small></h4>`;
+    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${colorStyle(t)}>
       <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span>${esc(c.rarity)}</div>
       ${cardImage(c, `<span>${esc(c.name)}</span>`)}
       <div class="dmeta"><b>${esc(c.set)}</b><span>${esc(c.num)}/${esc(c.total)} · ${esc(c.date.slice(0, 4))}</span></div>
@@ -186,19 +187,18 @@ function choose(cardId) {
 
 // ---------- Statistik ----------
 function renderStats() {
-  const counts = {};
-  for (const e of Object.values(collection)) counts[e.r] = (counts[e.r] || 0) + 1;
+  const entries = Object.values(collection);
+  const counts = countBy(entries, e => RARITY[e.r].tier);
   const max = Math.max(1, ...Object.values(counts));
-  const total = ownedCount(() => true);
   const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), DEX.filter(p => inBinder(b, p.n)).length);
   $("#statsBody").innerHTML = `
-    <div class="stat-tiles">${progressTile("gesamt", total, DEX.length)}${binderTile(1)}${binderTile(2)}</div>
+    <div class="stat-tiles">${progressTile("gesamt", entries.length, DEX.length)}${binderTile(1)}${binderTile(2)}</div>
     <h3>Nach Seltenheit</h3>
-    <div class="bars">${RARITIES.map(r => `
-      <div class="barrow"><span class="bl"><i style="background:${r.color}"></i>${esc(r.label)}</span>
-      <span class="bt"><span style="width:${((counts[r.id] || 0) / max) * 100}%;background:${r.color}"></span></span>
-      <b>${counts[r.id] || 0}</b></div>`).join("")}</div>
-    <p class="sub">${Object.values(collection).filter(e => e.card).length} von ${total} Karten mit gewähltem Kartendesign.</p>`;
+    <div class="bars">${TIERS.map(t => `
+      <div class="barrow"><span class="bl"><i style="background:${t.color}"></i>${esc(t.label)}</span>
+      <span class="bt"><span style="width:${((counts[t.id] || 0) / max) * 100}%;background:${t.color}"></span></span>
+      <b>${counts[t.id] || 0}</b></div>`).join("")}</div>
+    <p class="sub">${entries.filter(e => e.card).length} von ${entries.length} Karten mit gewähltem Kartendesign.</p>`;
 }
 
 // ---------- Suche ----------
