@@ -245,3 +245,47 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 
 /* Sprachauswahl im Kopf */
 .lang { padding: 7px 8px; border-radius: 10px; font-size: 14px; }
+
+/* Wunschliste */
+.wishview { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.wl-pane { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.wl-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.wl-head h2 { margin: 0; font-size: 18px; }
+#wlSearch { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); margin-bottom: 12px; }
+.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
+.wl-card { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 6px; border-radius: 10px; background: var(--bg); border: 2px solid transparent; font-size: 12px; min-width: 0; }
+.wl-card.wished { border-color: var(--warn); }
+.wl-card .cardbox { width: 100%; height: auto; }
+.wl-card .textcard { font-size: 12px; }
+.wl-card b, .wl-card .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-card .sub { font-size: 11px; }
+.star { position: absolute; top: 10px; right: 10px; z-index: 1; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; box-shadow: var(--shadow); }
+.star:hover { color: var(--warn); }
+.wished .star { background: var(--warn); border-color: var(--warn); color: #111; }
+.inb { align-self: flex-start; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); font-size: 11px; font-weight: 600; }
+.wl-more { display: block; margin: 14px auto 0; }
+.wl-tabs { margin-bottom: 12px; }
+.wtab { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; flex: 1; }
+.wtab.on { background: var(--panel); box-shadow: var(--shadow); font-weight: 600; }
+.wl-set { display: flex; justify-content: space-between; margin: 14px 0 6px; font-size: 13px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.wl-set:first-child { margin-top: 0; }
+.wl-set small { color: var(--muted); font-weight: 500; }
+.wl-item { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 4px 0; font-size: 13px; }
+.wl-thumb .cardbox { width: 44px; height: auto; }
+.wl-thumb .textcard { display: none !important; }
+.wl-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 8px 0 12px; }
+.shop { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.shop th { text-align: right; font-weight: 600; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.shop th:first-child, .shop td:first-child { text-align: left; }
+.shop td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--line); }
+.shop td small { color: var(--muted); }
+@media (max-width: 900px) {
+  .wishview { grid-template-columns: 1fr; }
+  .wl-pane { padding: 10px; }
+  .wl-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+}.shop-wrap { overflow-x: auto; }
+@media (max-width: 520px) {
+  .shop { font-size: 12px; }
+  .shop th, .shop td { padding: 4px 3px; }
+  .shop th { white-space: normal; hyphens: auto; }
+}

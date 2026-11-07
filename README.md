@@ -15,7 +15,8 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **Reverse Holo** option on every normal and holo card.
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
 - **Statistics** for collection progress per binder and per rarity tier.
-- **Backup** of the collection as a JSON file, which can be restored on any device.
+- **Wishlist** view: search all ~17,400 cards by Pokémon, card name, set (German or English) or number, mark cards with ★, and see wished cards grouped by set. Cards you put into the binder leave the wishlist automatically. A **shopping helper** ranks booster sets by how many empty slots (gaps) and rarer upgrades they offer for your binder; promos, trainer kits and similar can be shown with a checkbox.
+- **Backup** of the collection and wishlist as a JSON file, which can be restored on any device.
 - Works fully offline when opened locally. Names, sprites and card data ship with the app; card images can be downloaded once (see below).
 
 ### Rarity tiers
@@ -42,6 +43,7 @@ The interface and card names are in German by default. A language menu in the he
 | `js/data.js` | Pokédex, card lookup, binder positions, search |
 | `js/store.js` | Saving, optional online sync, backup |
 | `js/i18n.js` | Language menu and UI texts (German, English) |
+| `js/wishlist.js` | Wishlist, card list and shopping helper |
 | `js/ui.js` | User interface |
 | `data/` | Generated data files, do not edit by hand |
 | `tools/build_data.py` | Regenerates `data/` |

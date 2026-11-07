@@ -32,6 +32,13 @@ const STRINGS = {
     savedLocal: "Gespeichert in diesem Browser", connecting: "Verbinde…", liveWait: "Online-Speicher noch nicht erreichbar",
     live: "Live gespeichert", liveErr: "Online-Speicher nicht verfügbar",
     rows: ["oben", "2. Reihe", "3. Reihe", "unten"], cols: ["links", "2. von links", "3. von links", "rechts"],
+    wish: "Wunschliste", cardList: "Kartenliste", wlHits: "{n} Karten", more: "Mehr anzeigen",
+    wlSearchPh: "Karten suchen: Pokémon, Kartenname, Set oder Nummer …",
+    wishAdd: "Auf die Wunschliste", wishRemove: "Von der Wunschliste nehmen", inBinderTag: "im Binder",
+    wishEmpty: "Noch keine Wunschkarten. Tippe in der Kartenliste auf ★.",
+    shop: "Einkaufshilfe", set: "Set", shopGaps: "Lücken", shopUp: "Upgrades", shopWish: "Wunschkarten",
+    shopAll: "Auch Sets zeigen, die es nicht als Booster gibt (Promos, Trainer-Kits …)",
+    shopHint: "Welche Sets lohnen sich? Lücken: leere Slots, für die das Set eine Karte hat. Upgrades: deine Pokémon, für die das Set eine seltenere Stufe hat.",
   },
   en: {
     title: "Pokémon Binder Tracker",
@@ -55,6 +62,13 @@ const STRINGS = {
     savedLocal: "Saved in this browser", connecting: "Connecting…", liveWait: "Online storage not reachable yet",
     live: "Saved live", liveErr: "Online storage unavailable",
     rows: ["top", "2nd row", "3rd row", "bottom"], cols: ["left", "2nd from left", "3rd from left", "right"],
+    wish: "Wishlist", cardList: "Card list", wlHits: "{n} cards", more: "Show more",
+    wlSearchPh: "Search cards: Pokémon, card name, set or number …",
+    wishAdd: "Add to wishlist", wishRemove: "Remove from wishlist", inBinderTag: "in binder",
+    wishEmpty: "No wished cards yet. Tap ★ in the card list.",
+    shop: "Shopping helper", set: "Set", shopGaps: "Gaps", shopUp: "Upgrades", shopWish: "Wished",
+    shopAll: "Also show sets not sold as boosters (promos, trainer kits …)",
+    shopHint: "Which sets are worth it? Gaps: empty slots this set has a card for. Upgrades: your Pokémon this set has a rarer tier for.",
   },
 };
 
