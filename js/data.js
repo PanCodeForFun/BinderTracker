@@ -46,6 +46,7 @@ function cardsFor(n) {
       const [setId, setEn, , date, total, setDe, deSet] = TCG_SETS[setIdx];
       return {
         id: `${setId}-${num}`, date, total, num, cat, setIdx, rarity: TCG_RARITY_NAMES[rarityIdx],
+        tcgdex: `${deSet}-${deNum || num}`,  // für Preise (js/prices.js)
         name: (de && nameDe) || nameEn, set: (de && setDe) || setEn, ...imageSources(setId, num, img, deSet, deNum),
         keys: [nameEn, nameDe, setEn, setDe].map(s => norm(s || "")).join(" "),  // für die Kartensuche
       };

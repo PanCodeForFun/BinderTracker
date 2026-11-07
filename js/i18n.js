@@ -47,6 +47,13 @@ const STRINGS = {
     shopCount: "{n} Wunschkarten", shopOne: "1 Wunschkarte",
     shopSingles: "Nicht als Booster erhältlich (Promos, Trainer-Kits …), am besten einzeln kaufen",
     shopEmpty: "Noch keine Wunschkarten, also auch keine Vorschläge. Markiere Karten in der Kartenliste mit ★.",
+    collection: "Sammlung", value: "Wert", approx: "ca. {v}", noPrice: "kein Preis bekannt",
+    priceLoading: "Preis wird geladen…", priceFailed: "Preis nicht abrufbar",
+    valueHint: "Grober Wert deiner eingetragenen Karten: Cardmarket-Trendpreis über TCGdex, ohne Unterscheidung nach Sprache und Zustand. Die Preise werden nur auf Knopfdruck abgefragt.",
+    valueButton: "Binderwert ermitteln", valueLoading: "Lade Preise… {a} / {b}",
+    valueCount: "{a} von {b} Karten mit Preis.", valueAsOf: "Stand: {d}.",
+    valueNoDesign: "Ohne gewähltes Kartendesign und daher ohne Preis: {n}.",
+    valueTop: "Die 10 wertvollsten Karten", pricesFailed: "{n} Preise konnten nicht abgerufen werden.",
   },
   en: {
     title: "Pokémon Binder Tracker",
@@ -85,6 +92,13 @@ const STRINGS = {
     shopCount: "{n} wished cards", shopOne: "1 wished card",
     shopSingles: "Not sold as boosters (promos, trainer kits …), best bought as singles",
     shopEmpty: "No wished cards yet, so no suggestions. Mark cards with ★ in the card list.",
+    collection: "Collection", value: "Value", approx: "approx. {v}", noPrice: "no price known",
+    priceLoading: "Loading price…", priceFailed: "Price unavailable",
+    valueHint: "Rough value of your entered cards: Cardmarket trend price via TCGdex, regardless of language and condition. Prices are only requested when you press the button.",
+    valueButton: "Get binder value", valueLoading: "Loading prices… {a} / {b}",
+    valueCount: "{a} of {b} cards with a price.", valueAsOf: "As of {d}.",
+    valueNoDesign: "Without a chosen card design and therefore without a price: {n}.",
+    valueTop: "The 10 most valuable cards", pricesFailed: "{n} prices could not be loaded.",
   },
 };
 

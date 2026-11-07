@@ -1,4 +1,4 @@
-// Oberfläche: Binderseite, Übersicht, Kartenauswahl, Statistik, Suche.
+// Oberfläche: Binderseite, Übersicht, Kartenauswahl, Sammlung (Statistik, Wert), Suche.
 
 const $ = sel => document.querySelector(sel);
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -61,8 +61,9 @@ function imgChain(srcs, attrs = "") {
 function openZoom(card) {
   if (!card) return;
   $("#zoomBox").innerHTML = imgChain([...card.big, ...card.srcs], `alt="${esc(card.name)}"`) +
-    `<figcaption><b>${esc(card.name)}</b> · ${esc(card.set)} · ${esc(card.num)}/${esc(card.total)}</figcaption>`;
+    `<figcaption><b>${esc(card.name)}</b> · ${esc(card.set)} · ${esc(card.num)}/${esc(card.total)} · <span id="zoomPrice"></span></figcaption>`;
   $("#zoomBox img").loading = "eager";
+  showPrice($("#zoomPrice"), card);
   $("#zoom").hidden = false;
   document.body.classList.add("modal-open");
   history.pushState({ zoom: true }, "");
@@ -158,7 +159,7 @@ function render() {
   $("#wishView").hidden = view.mode !== "wish";
   $("#statsView").hidden = view.mode !== "stats";
   $("#dataView").hidden = view.mode !== "data";
-  ({ page: renderPage, overview: renderOverview, wish: renderWishView, stats: renderStats, data: () => {} })[view.mode]();
+  ({ page: renderPage, overview: renderOverview, wish: renderWishView, stats: renderCollection, data: () => {} })[view.mode]();
   if (pick.n) renderPicker();
   writeHash();
 }
@@ -192,6 +193,9 @@ function openPicker(n) {
   $("#pickerSprite").src = spriteUrl(n);
   $("#pickerNote").value = e?.note || "";
   $("#noDesignRarity").value = e?.r || "normal";
+  const card = findCard(n, e?.card);
+  $("#pickerPrice").textContent = "";
+  if (card) showPrice($("#pickerPrice"), card, e.r === "reverse");
   renderPicker();
   openModal("#picker");
   $("#designs").scrollTop = 0;
@@ -230,7 +234,13 @@ function choose(cardId, asReverse) {
   commit({ r: asReverse ? "reverse" : card.cat, card: card.id, note: $("#pickerNote").value.trim() });
 }
 
-// ---------- Statistik ----------
+// ---------- Sammlung: Statistik und Wert (js/prices.js) ----------
+const coll = { tab: "stats" };
+function renderCollection() {
+  document.querySelectorAll(".ctab").forEach(b => b.classList.toggle("on", b.dataset.ctab === coll.tab));
+  (coll.tab === "value" ? renderValue : renderStats)();
+}
+
 function renderStats() {
   const entries = Object.values(collection);
   const counts = countBy(entries, e => RARITY[e.r].tier);
@@ -304,6 +314,9 @@ function bindEvents() {
   on("#pageSelect", "change", e => { view.page = +e.target.value; render(); });
   on("#prev", "click", () => turnPage(-1));
   on("#next", "click", () => turnPage(1));
+  document.querySelectorAll(".ctab").forEach(b => (b.onclick = () => { coll.tab = b.dataset.ctab; renderCollection(); }));
+  onClosest("#statsBody", "click", "#btnValue", loadCollectionValue);
+  onClosest("#statsBody", "click", ".top-cards li[data-n]", li => goTo(+li.dataset.n));
   onClosest("#overView", "click", ".mini", m => { Object.assign(view, { page: +m.dataset.page, mode: "page" }); render(); scrollTo({ top: 0 }); });
 
   onClosest("#grid", "click", ".slot[data-n]", (slot, e) => { if (e.target.closest(".rbtn, .vis")) openPicker(+slot.dataset.n); });
