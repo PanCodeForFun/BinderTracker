@@ -72,6 +72,8 @@ const STRINGS = {
     fTier: "Seltenheit", fSeries: "Serie", fSet: "Set deiner Karte",
     fDesign: "Kartendesign gewählt", fNote: "Notiz", fKind: "Besonderheit", fArtist: "Illustrator deiner Karte",
     fRarer: "Seltenere Karte verfügbar", fEmpty: "Noch keine passenden Karten eingetragen.",
+    fResults: "Treffer", fResultsCount: "{n} Pokémon auf {p} Seiten", fNoResults: "Kein Pokémon passt zu den Filtern.",
+    fHidden: "Dieses Pokémon ist durch die Filter ausgeblendet.",
   },
   en: {
     title: "Pokémon Binder Tracker",
@@ -134,6 +136,8 @@ const STRINGS = {
     fTier: "Rarity", fSeries: "Series", fSet: "Set of your card",
     fDesign: "Card design chosen", fNote: "Note", fKind: "Special", fArtist: "Illustrator of your card",
     fRarer: "Rarer card available", fEmpty: "No matching cards entered yet.",
+    fResults: "Matches", fResultsCount: "{n} Pokémon on {p} pages", fNoResults: "No Pokémon matches the filters.",
+    fHidden: "This Pokémon is hidden by the filters.",
   },
 };
 

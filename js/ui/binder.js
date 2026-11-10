@@ -7,7 +7,7 @@ function slotHtml(n) {
   if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
 
   const e = owned(n), r = e && RARITY[e.r], card = e && findCard(n, e.card);
-  const dim = anyFilter() && !matches(n);
+  const dim = view.mode !== "page" && anyFilter() && !matches(n);  // auf der Seite zeigt renderMatches nur Treffer
   const lang = e && cardLang(e);
   const visual = card ? cardImage(card, spriteImg(n), lang) : spriteImg(n);
   const tag = e && lang !== DEFAULT_CARD_LANG ? ` <span class="lang-tag" title="${esc(CARD_LANG[lang].label)}">${CARD_LANG[lang].short}</span>` : "";
@@ -79,14 +79,27 @@ async function slotMenuClick(el) {
 
 // ---------- Seite und Übersicht ----------
 function renderPage() {
+  if (anyFilter()) return renderMatches();
   const start = firstOnPage(view.binder, view.page);
   $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
   $("#pageRange").textContent = t("range", { a: pad(start), b: pad(Math.min(start + LAYOUT.slotsPerPage - 1, Math.max(start, MAX_N))) });
-  $("#pageProgress").textContent = [
-    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: dexInBinder(view.binder).length }),
-    matchText(view.binder),
-  ].filter(Boolean).join(" · ");
+  $("#pageProgress").textContent =
+    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: dexInBinder(view.binder).length });
   $("#grid").innerHTML = pageNumbers(view.binder, view.page).map(slotHtml).join("");
+}
+
+// Mit Filter: nur die passenden Pokémon aus beiden Bindern, nach Binderseite gruppiert.
+// Seiten ohne Treffer fallen weg, so findet man die Treffer ohne Blättern.
+function renderMatches() {
+  const active = activeFilters();
+  const hits = DEX.filter(p => matches(p.n, active)).map(p => p.n);
+  const pages = groupBy(hits, n => { const { binder, page } = locate(n); return t("pageTitle", { b: binder, p: page }); });
+  $("#pageTitle").textContent = t("fResults");
+  $("#pageRange").textContent = t("fResultsCount", { n: hits.length, p: pages.size });
+  $("#pageProgress").textContent = "";
+  $("#grid").innerHTML = hits.length
+    ? [...pages].map(([title, ns]) => `<h3 class="match-head">${esc(title)}</h3>${ns.map(slotHtml).join("")}`).join("")
+    : `<p class="sub match-none">${t("fNoResults")}</p>`;
 }
 
 function renderOverview() {
@@ -113,12 +126,16 @@ function renderBinderBar() {
   $("#pageSelect").innerHTML = range(pages, 1).map(i => `<option>${i}</option>`).join("");
   $("#pageSelect").value = view.page;
   $("#pageCount").textContent = t("of", { n: pages });
+  // Trefferansicht (Seite mit Filter): Binder-Reiter und Blättern gelten dort nicht
+  const results = view.mode === "page" && anyFilter();
+  $("#binderBar .tabs").hidden = $(".pager").hidden = results;
   $("#prev").disabled = view.binder === 1 && view.page === 1;
   $("#next").disabled = view.binder === 2 && view.page === pages;
 }
 
 // Blättern über die Bindergrenze hinweg: hinter der letzten Seite von Binder 1 kommt Binder 2.
 function turnPage(delta) {
+  if (view.mode === "page" && anyFilter()) return;
   let { binder, page } = view;
   page += delta;
   if (page < 1) [binder, page] = binder === 2 ? [1, pageCount(1)] : [1, 1];
@@ -135,6 +152,7 @@ function goTo(n) {
   Object.assign(view, { binder, page, mode: "page" });
   render();
   const el = slotEl(n);
+  if (!el) toast(t("fHidden"));
   el?.scrollIntoView({ block: "center", behavior: "smooth" });
   el?.classList.add("flash");
 }

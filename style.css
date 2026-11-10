@@ -419,3 +419,6 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .chip.on { background: color-mix(in srgb, var(--c) 22%, var(--panel)); border-color: var(--c); font-weight: 600; }
 .filter-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 auto 12px; max-width: 900px; }
 .chip-clear { border: 0; background: transparent; color: var(--accent); font-size: 13px; text-decoration: underline; padding: 4px 6px; }
+.match-head { grid-column: 1 / -1; margin: 8px 4px -4px; font-size: 14px; color: var(--muted); }
+.match-head:first-child { margin-top: 0; }
+.match-none { grid-column: 1 / -1; text-align: center; padding: 40px 0; }
