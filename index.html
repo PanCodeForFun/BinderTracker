@@ -60,6 +60,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
         <option value="all" data-i18n="all">alle</option>
         <option value="missing" data-i18n="onlyMissing">nur fehlende</option>
         <option value="have" data-i18n="onlyHave">nur vorhandene</option>
+        <option value="upgrade" data-i18n="onlyUpgrades">nur Upgrades</option>
       </select>
     </label>
   </div>
@@ -105,6 +106,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
     <div class="views wl-tabs">
       <button class="ctab" data-ctab="stats" data-i18n="stats">Statistik</button>
       <button class="ctab" data-ctab="value" data-i18n="value">Wert</button>
+      <button class="ctab" data-ctab="upgrades"><span data-i18n="upgrades">Upgrades</span> <small id="upNum"></small></button>
     </div>
     <div id="statsBody"></div>
   </section>

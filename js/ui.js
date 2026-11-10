@@ -101,18 +101,19 @@ function slotHtml(n) {
   if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
 
   const e = owned(n), r = e && RARITY[e.r], card = e && findCard(n, e.card);
-  const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e);
+  const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e) || (view.filter === "upgrade" && !wantsUpgrade(e));
   const lang = e && cardLang(e);
   const visual = card
     ? cardImage(card, `<img class="spr" src="${spriteUrl(n)}" alt="">`, lang)
     : `<img class="spr" src="${spriteUrl(n)}" alt="">`;
   const tag = e && lang !== DEFAULT_CARD_LANG ? ` <span class="lang-tag" title="${esc(CARD_LANG[lang].label)}">${CARD_LANG[lang].short}</span>` : "";
+  const up = wantsUpgrade(e) ? ` <span class="up-tag" title="${t("upTag")}">↑</span>` : "";
   const sub = card ? `${card.set} · ${card.num}` : p.alt !== p.name ? p.alt : "";
 
   return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
-    <div class="de">${esc(p.name)}${tag}</div>
+    <div class="de">${esc(p.name)}${tag}${up}</div>
     <div class="sub">${esc(sub) || "&nbsp;"}</div>
     <div class="slot-foot">
       <button class="rbtn">${r ? esc(r.label) : t("pickCard")}</button>
@@ -129,6 +130,12 @@ const SLOT_MENU = [
     html: e => `<div class="sm-title">${t("cardLang")}</div><div class="seg">${CARD_LANGS.map(l =>
       `<button data-lang="${l.id}" class="${cardLang(e) === l.id ? "on" : ""}" title="${esc(l.label)}">${l.short}</button>`).join("")}</div>`,
     click: (el, e) => el.dataset.lang && { ...e, lang: el.dataset.lang },
+  },
+  {  // Upgrade gesucht: unter UPGRADE_BELOW automatisch, darüber von Hand
+    html: e => `<div class="sm-title">${t("upgrades")}</div>${autoUpgrade(e)
+      ? `<div class="sm-note">↑ ${t("upAuto", { x: TIER[UPGRADE_BELOW].label })}</div>`
+      : `<button data-up class="sm-toggle${e.up ? " on" : ""}" aria-pressed="${!!e.up}">↑ ${t("upToggle")}</button>`}`,
+    click: (el, e) => "up" in el.dataset && { ...e, up: !e.up },
   },
 ];
 const slotMenu = { n: null };
@@ -260,7 +267,9 @@ function renderPicker() {
   $("#designs").innerHTML = !cards.length ? `<p class="sub">${t("noCards")}</p>` : cards.map((c, i) => {
     const tier = TIER[tierOf(c)];
     const head = i && tierOf(cards[i - 1]) === tier.id ? "" : `<h4 class="group" ${colorStyle(tier)}><i></i>${esc(tier.label)} <small>${counts[tier.id]}</small></h4>`;
-    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${colorStyle(tier)}>
+    const wished = isWished(c.id);
+    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}${wished ? " wished" : ""}" data-card="${esc(c.id)}" ${colorStyle(tier)}>
+      <span class="star" data-star role="button" title="${t(wished ? "wishRemove" : "wishAdd")}" aria-pressed="${wished}">★</span>
       <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span><span class="rname">${esc(c.rarity === "None" ? t("noRarity") : c.rarity)}</span>${
         REVERSE_FROM.includes(c.cat) ? `<span class="rev${e?.card === c.id && e.r === "reverse" ? " on" : ""}" data-rev title="${t("reverseTip")}">Reverse</span>` : ""}</div>
       ${cardImage(c, `<span>${esc(c.name)}</span>`)}
@@ -288,11 +297,39 @@ function choose(cardId, asReverse) {
   commit({ r: asReverse ? "reverse" : card.cat, card: card.id, note: $("#pickerNote").value.trim() });
 }
 
-// ---------- Sammlung: Statistik und Wert (js/prices.js) ----------
-const coll = { tab: "stats" };
+// ---------- Sammlung: Statistik, Wert (js/prices.js), Upgrades ----------
+const coll = { tab: "stats", upSort: "dex" };
 function renderCollection() {
   document.querySelectorAll(".ctab").forEach(b => b.classList.toggle("on", b.dataset.ctab === coll.tab));
-  (coll.tab === "value" ? renderValue : renderStats)();
+  $("#upNum").textContent = upgradeRows().length || "";
+  ({ value: renderValue, upgrades: renderUpgrades }[coll.tab] || renderStats)();
+}
+
+// Upgrade-Liste: Pokémon mit Haken „Will ich ersetzen“ oder mit Wunschkarten.
+// Automatische Upgrades (unter UPGRADE_BELOW) stehen nicht hier, nur am Slot. Klick springt zum Slot.
+function upgradeRows() {
+  const wished = new Map();
+  for (const id of wishlist.keys()) for (const n of cardById(id)?.ns || []) wished.set(n, [...(wished.get(n) || []), cardById(id)]);
+  const rows = DEX.filter(p => owned(p.n)?.up || wished.has(p.n)).map(p => ({ p, e: owned(p.n), wishes: wished.get(p.n) || [] }));
+  const rank = row => (row.e ? RARITY[row.e.r].rank : -1);
+  if (coll.upSort === "common") rows.sort((a, b) => rank(a) - rank(b) || a.p.n - b.p.n);
+  return rows;
+}
+
+function renderUpgrades() {
+  const rows = upgradeRows();
+  const sorts = [["dex", t("sortDex")], ["common", t("upSortCommon")]];
+  $("#statsBody").innerHTML = `<p class="sub">${t("upHint", { x: esc(TIER[UPGRADE_BELOW].label) })}</p>
+    <div class="up-tools"><b>${t("upCount", { n: rows.length, m: rows.filter(x => x.e?.up).length, w: rows.filter(x => x.wishes.length).length })}</b>
+      <select id="upSort" title="${t("sortLabel")}">${sorts.map(([id, label]) => `<option value="${id}"${coll.upSort === id ? " selected" : ""}>${label}</option>`).join("")}</select></div>
+    ${!rows.length ? `<p class="sub">${t("upEmpty")}</p>` : `<ol class="top-cards up-list">${rows.map(({ p, e, wishes }) => {
+      const r = e && RARITY[e.r], card = e && findCard(p.n, e.card), loc = locate(p.n);
+      const now = e ? `<span class="up-rar">${esc(r.label)}</span>${card ? ` · ${esc(card.set)} · ${esc(card.num)}` : ""}${e.up ? ` · ${t("upManual")}` : ""}` : t("missingYet");
+      return `<li data-n="${p.n}" ${colorStyle(r)}><div class="wl-thumb">${card ? cardImage(card, "", cardLang(e)) : `<img class="spr" src="${spriteUrl(p.n)}" alt="">`}</div>
+        <div><b>${pad(p.n)} ${esc(p.name)}</b><div class="sub">${now}</div>${wishes.length ? `<div class="up-wish">
+          <span class="sub">★ ${t("wish")}:</span>${wishes.map(c => `<span class="up-chip" title="${esc(c.name)}"><span class="wl-thumb">${cardImage(c)}</span>${esc(c.set)} · ${esc(c.num)}</span>`).join("")}</div>` : ""}</div>
+        <span class="sub">${t("where", { b: loc.binder, p: loc.page, slot: slotText(loc) })}</span></li>`;
+    }).join("")}</ol>`}`;
 }
 
 function renderStats() {
@@ -385,6 +422,7 @@ function bindEvents() {
   document.querySelectorAll(".ctab").forEach(b => (b.onclick = () => { coll.tab = b.dataset.ctab; renderCollection(); }));
   onClosest("#statsBody", "click", "#btnValue", loadCollectionValue);
   onClosest("#statsBody", "click", ".top-cards li[data-n]", li => goTo(+li.dataset.n));
+  onClosest("#statsBody", "change", "#upSort", s => { coll.upSort = s.value; renderUpgrades(); });
   onClosest("#overView", "click", ".mini", m => { Object.assign(view, { page: +m.dataset.page, mode: "page" }); render(); scrollTo({ top: 0 }); });
 
   onClosest("#grid", "click", ".slot[data-n]", (slot, e) => {
@@ -395,7 +433,13 @@ function bindEvents() {
   document.addEventListener("click", e => { if (!e.target.closest("#slotMenu, .more")) closeSlotMenu(); });
   addEventListener("resize", closeSlotMenu);
   addEventListener("scroll", closeSlotMenu, { passive: true });
-  onClosest("#designs", "click", ".design", (d, e) => choose(d.dataset.card, !!e.target.closest("[data-rev]")));
+  onClosest("#designs", "click", ".design", (d, e) => {
+    if (!e.target.closest("[data-star]")) return choose(d.dataset.card, !!e.target.closest("[data-rev]"));
+    setWish(d.dataset.card, !isWished(d.dataset.card)).catch(() => setStatus("err", t("saveFailed")));
+    const top = $("#designs").scrollTop;
+    renderPicker();
+    $("#designs").scrollTop = top;
+  });
   on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });

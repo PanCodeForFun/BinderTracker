@@ -43,6 +43,10 @@ const RARITIES = [
   { id: "hyper",   label: "Hyper / Gold / Rainbow",    tier: "secret" },
 ];
 
+// Upgrade-Markierung: Karten unter dieser Stufe will man automatisch noch ersetzen.
+// Ab dieser Stufe setzt man den Haken „Will ich ersetzen“ selbst (Menü „…“ am Slot).
+const UPGRADE_BELOW = "rule";
+
 // Sets, die es nicht als Booster zu kaufen gibt (englischer Setname). Die Einkaufshilfe blendet sie aus.
 const NON_BOOSTER = /Promo|Trainer Kit|McDonald|Futsal|Energies|Classic Collection|Kalos Starter|Best of Game|Rumble/i;
 
