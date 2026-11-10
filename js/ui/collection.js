@@ -29,11 +29,6 @@ function renderStats() {
 // ---------- Wert ----------
 const valueRun = { busy: false, done: 0, total: 0, failed: 0 };
 
-// Eingetragene Karten mit gewähltem Design: { n, e (Eintrag), c (Karte) }.
-const ownedCards = () => Object.entries(collection)
-  .map(([n, e]) => ({ n: +n, e, c: findCard(+n, e.card) }))
-  .filter(x => x.c);
-
 // Preise aller Karten holen (Knopf „Binderwert ermitteln“).
 async function loadCollectionValue() {
   if (valueRun.busy) return;

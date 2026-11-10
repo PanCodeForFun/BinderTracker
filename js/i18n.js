@@ -66,6 +66,11 @@ const STRINGS = {
     upHint: "Karten, die du durch eine bessere ersetzen willst: von Hand markiert (Menü „…“ am Slot) oder mit Karten auf der Wunschliste. Alles unter „{x}“ ist automatisch ein Upgrade und hat nur das ↑ am Slot.",
     upCount: "{n} Pokémon ({m} von Hand markiert, {w} mit Wunschkarten)", upEmpty: "Keine Upgrades offen. Markiere Karten im Menü „…“ oder setze Karten auf die Wunschliste.",
     upSortCommon: "Häufigste zuerst", pricesFailed: "{n} Preise konnten nicht abgerufen werden.",
+    fBtn: "Filter", fReset: "Filter zurücksetzen", fRemove: "Filter entfernen", fMatch: "{a} von {b} passen",
+    fHint: "Mehrere Werte in einer Gruppe: eins davon reicht. Seltenheit, Serie, Set, Design und Notiz beziehen sich auf deine eingetragene Karte.",
+    fGen: "Generation", genN: "Gen {n}", fType: "Primärtyp", fType2: "Zweittyp", fNone: "keiner",
+    fTier: "Seltenheit", fSeries: "Serie", fSet: "Set deiner Karte", fSetEmpty: "Noch keine Karte mit Set eingetragen.",
+    fDesign: "Kartendesign gewählt", fNote: "Notiz",
   },
   en: {
     title: "Pokémon Binder Tracker",
@@ -122,6 +127,11 @@ const STRINGS = {
     upHint: "Cards you want to replace with a better one: marked by hand (“…” menu on the slot) or with cards on your wishlist. Everything below “{x}” is an upgrade automatically and only gets the ↑ on the slot.",
     upCount: "{n} Pokémon ({m} marked by hand, {w} with wished cards)", upEmpty: "No open upgrades. Mark cards in the “…” menu or add cards to your wishlist.",
     upSortCommon: "Most common first", pricesFailed: "{n} prices could not be loaded.",
+    fBtn: "Filter", fReset: "Reset filters", fRemove: "Remove filter", fMatch: "{a} of {b} match",
+    fHint: "Several values in one group: any of them is enough. Rarity, series, set, design and note refer to the card you entered.",
+    fGen: "Generation", genN: "Gen {n}", fType: "Primary type", fType2: "Secondary type", fNone: "none",
+    fTier: "Rarity", fSeries: "Series", fSet: "Set of your card", fSetEmpty: "No card with a set entered yet.",
+    fDesign: "Card design chosen", fNote: "Note",
   },
 };
 

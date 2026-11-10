@@ -17,7 +17,8 @@ function render() {
   const binder = isBinderMode(view.mode);
   if (binder) view.binderMode = view.mode;  // beim Zurückwechseln wieder Seite bzw. Übersicht
   $$(".sect").forEach(b => b.classList.toggle("on", b.dataset.mode === view.mode || (binder && b.dataset.mode === "page")));
-  $("#binderBar").hidden = $("#binderSearch").hidden = !binder;
+  $("#binderBar").hidden = $("#binderSearch").hidden = $("#binderFilters").hidden = !binder;
+  if (binder) renderFilters();
   for (const [mode, v] of Object.entries(VIEWS)) $(v.el).hidden = mode !== view.mode;
   VIEWS[view.mode].render();
   if (pick.n) renderPicker();
@@ -87,7 +88,7 @@ applyStaticText();
 loadCollection();
 loadWishlist();
 readHash();
-[bindMainEvents, bindBinderEvents, bindPickerEvents, bindCollectionEvents, bindWishEvents, bindSearchEvents, bindOptionEvents].forEach(bind => bind());
+[bindMainEvents, bindBinderEvents, bindFilterEvents, bindPickerEvents, bindCollectionEvents, bindWishEvents, bindSearchEvents, bindOptionEvents].forEach(bind => bind());
 render();
 connectLive({
   onStatus: setStatus,

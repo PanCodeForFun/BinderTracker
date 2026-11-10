@@ -56,8 +56,13 @@ def build_pokedex():
         if r["local_language_id"] in (LANG_DE, LANG_EN):
             names.setdefault(int(r["pokemon_species_id"]), {})[r["local_language_id"]] = r["name"]
     gen = {int(r["id"]): int(r["generation_id"]) for r in csv_rows("pokemon_species")}
-    dex = [[n, names[n].get(LANG_DE, names[n][LANG_EN]), names[n][LANG_EN], gen[n]] for n in sorted(gen)]
-    write_js("pokedex.js", "Nationaldex: [Nummer, Deutsch, Englisch, Generation]", POKEDEX=dex)
+    # Typen der Standardform (pokemon_id = Dex-Nummer), englischer Bezeichner wie in TYPES (js/config.js)
+    type_ids = {r["id"]: r["identifier"] for r in csv_rows("types")}
+    types = {}
+    for r in sorted(csv_rows("pokemon_types"), key=lambda r: int(r["slot"])):
+        types.setdefault(int(r["pokemon_id"]), []).append(type_ids[r["type_id"]])
+    dex = [[n, names[n].get(LANG_DE, names[n][LANG_EN]), names[n][LANG_EN], gen[n], types.get(n, [])] for n in sorted(gen)]
+    write_js("pokedex.js", "Nationaldex: [Nummer, Deutsch, Englisch, Generation, [Primärtyp, Sekundärtyp]]", POKEDEX=dex)
     return [d[0] for d in dex]
 
 

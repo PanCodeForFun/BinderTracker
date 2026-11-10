@@ -17,6 +17,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **"…" menu** on every filled slot for extra options per card:
   - **Card language** of your own copy (DE by default, EN, JP). Non-German cards get a small "EN" or "JP" tag next to the name, the slot shows the image in that language where one exists, and changing the card keeps the language.
   - **Upgrade wanted**: every card below the "ex, V, GX & Co." tier counts as an upgrade automatically; rarer cards get a "Will ich ersetzen" toggle. Upgrades show an orange ↑ next to the name and can be highlighted with the "nur Upgrades" filter. Picking a new card for the slot clears the manual mark. The threshold is `UPGRADE_BELOW` in `js/config.js`.
+- **Filters** next to "Anzeigen": generation, primary and secondary type, rarity tier, series, set of your card, card design chosen and note. Pokémon that don't match are dimmed in place (page and overview), active filters show as removable chips with a match count, and the choice is remembered in the browser. New filters are one entry in `FILTERS` in `js/filters.js`.
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
 - **Collection** with three tabs: **Statistik** shows progress per binder and per rarity tier; **Wert** shows a rough value of your cards (Cardmarket trend price in euros via the TCGdex API, total and per binder, plus the 10 most valuable cards; prices are only requested when you press "Binderwert ermitteln" or open a card, are kept in the browser for a day and need an internet connection); **Upgrades** lists the manually marked cards plus every Pokémon with cards on the wishlist (automatic upgrades are left out), by Dex number or most common first, and a click jumps to the slot.
 - **Wishlist** with three tabs: the **card list** shows all ~17,400 cards booster by booster (newest first, rarest first within a set, with a separator and set logo per booster, a "Nächstes Booster" button and a dropdown to jump to any booster; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets (with set logo) from your wished cards, with promos and similar listed separately as singles. Click any card image there to see it full size (German or English high-resolution scan when online); ×, Escape or Back closes it.
@@ -45,12 +46,11 @@ The interface and card names are in German by default. A language menu in the he
 
 Planned next, roughly in this order:
 
-1. More filters (generation, set, primary type, …)
-2. Regional forms and Megas in the Dex
-3. Duplicates and a trade list
-4. A second binder for Trainers and Items
-5. Matching a photo of a binder page to its slots
-6. Japanese as a third interface language
+1. Regional forms and Megas in the Dex
+2. Duplicates and a trade list
+3. A second binder for Trainers and Items
+4. Matching a photo of a binder page to its slots
+5. Japanese as a third interface language
 
 ## Project structure
 
@@ -64,10 +64,11 @@ Plain HTML, CSS and JavaScript without a build step. The scripts are loaded in o
 | `js/data.js` | Pokédex, sets, card lookup, binder positions, search |
 | `js/store.js` | Collection and wishlist: saving in the browser, optional online sync |
 | `js/history.js` | Undo / redo history for collection and wishlist |
+| `js/filters.js` | Binder filters: what can be filtered and which Pokémon match |
 | `js/backup.js` | JSON backup, CSV export and import |
 | `js/prices.js` | Card prices from TCGdex |
 | `js/ui/common.js` | Shared UI parts: view state, toasts, card images, full-size view |
-| `js/ui/binder.js`, `picker.js`, `collection.js`, `wishlist.js`, `search.js`, `options.js` | One file per area of the interface |
+| `js/ui/binder.js`, `filters.js`, `picker.js`, `collection.js`, `wishlist.js`, `search.js`, `options.js` | One file per area of the interface |
 | `js/main.js` | Switches between areas, address (#…), keyboard, start-up |
 | `data/` | Generated data files, do not edit by hand |
 | `tools/common.py` | Shared helpers for the Python scripts (downloads, paths) |

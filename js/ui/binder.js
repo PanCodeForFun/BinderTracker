@@ -7,7 +7,7 @@ function slotHtml(n) {
   if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
 
   const e = owned(n), r = e && RARITY[e.r], card = e && findCard(n, e.card);
-  const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e) || (view.filter === "upgrade" && !wantsUpgrade(e));
+  const dim = anyFilter() && !matches(n);
   const lang = e && cardLang(e);
   const visual = card ? cardImage(card, spriteImg(n), lang) : spriteImg(n);
   const tag = e && lang !== DEFAULT_CARD_LANG ? ` <span class="lang-tag" title="${esc(CARD_LANG[lang].label)}">${CARD_LANG[lang].short}</span>` : "";
@@ -82,17 +82,22 @@ function renderPage() {
   const start = firstOnPage(view.binder, view.page);
   $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
   $("#pageRange").textContent = t("range", { a: pad(start), b: pad(Math.min(start + LAYOUT.slotsPerPage - 1, Math.max(start, MAX_N))) });
-  $("#pageProgress").textContent =
-    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: dexInBinder(view.binder).length });
+  $("#pageProgress").textContent = [
+    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: dexInBinder(view.binder).length }),
+    matchText(view.binder),
+  ].filter(Boolean).join(" · ");
   $("#grid").innerHTML = pageNumbers(view.binder, view.page).map(slotHtml).join("");
 }
 
 function renderOverview() {
-  $("#overView").innerHTML = range(pageCount(view.binder), 1).map(page => {
+  const filtered = anyFilter(), active = activeFilters();
+  const head = filtered ? `<p class="sub overview-match">${matchText(view.binder)}</p>` : "";
+  $("#overView").innerHTML = head + range(pageCount(view.binder), 1).map(page => {
     const numbers = pageNumbers(view.binder, page);
     const cells = numbers.map(n => {
       const p = BY_N.get(n), r = RARITY[owned(n)?.r];
-      return `<span class="${!p ? "void" : r ? "have" : ""}" ${colorStyle(r)} title="${p ? esc(pad(n) + " " + p.name) : t("free")}"></span>`;
+      const cls = [!p ? "void" : r ? "have" : "", p && filtered && !matches(n, active) ? "dim" : ""].filter(Boolean).join(" ");
+      return `<span class="${cls}" ${colorStyle(r)} title="${p ? esc(pad(n) + " " + p.name) : t("free")}"></span>`;
     });
     const have = numbers.filter(owned).length, real = numbers.filter(n => BY_N.has(n)).length;
     return `<button class="mini" data-page="${page}"><div class="t"><b>${t("page")} ${page}</b><span>${have}/${real}</span></div><div class="g">${cells.join("")}</div></button>`;

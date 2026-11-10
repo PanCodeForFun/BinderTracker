@@ -11,6 +11,10 @@ const collectionDocs = new LiveDocs(DB_COLLECTION);
 
 const owned = n => collection[n];
 const ownedCount = predicate => DEX.filter(p => collection[p.n] && predicate(p)).length;
+// Eingetragene Karten mit gewähltem Design: { n, e (Eintrag), c (Karte) }.
+const ownedCards = () => Object.entries(collection)
+  .map(([n, e]) => ({ n: +n, e, c: findCard(+n, e.card) }))
+  .filter(x => x.c);
 const cardLang = e => e?.lang || DEFAULT_CARD_LANG;
 
 // Upgrade gesucht? Unter UPGRADE_BELOW immer, darüber nur mit Haken.

@@ -3,7 +3,7 @@
 
 // ---------- Pokédex ----------
 // name = Anzeigename in der gewählten Sprache, alt = der andere Name
-const DEX = POKEDEX.map(([n, de, en, gen]) => ({ n, de, en, gen, name: localName(de, en), alt: LANG === "en" ? de : en }));
+const DEX = POKEDEX.map(([n, de, en, gen, types = []]) => ({ n, de, en, gen, types, name: localName(de, en), alt: LANG === "en" ? de : en }));
 const BY_N = new Map(DEX.map(p => [p.n, p]));
 const MAX_N = DEX[DEX.length - 1].n;
 
