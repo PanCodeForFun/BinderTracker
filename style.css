@@ -171,6 +171,9 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .designs { flex: 1 1 auto; min-height: 120px; overflow: auto; display: grid; gap: 12px; padding: 2px 2px 8px; align-content: start; grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); }
 .design { display: flex; flex-direction: column; gap: 6px; padding: 6px; text-align: left; border: 2px solid transparent; border-radius: 10px; background: var(--bg); }
 .design:hover { border-color: var(--line); }
+.design { position: relative; }
+.design .star { top: 34px; right: 12px; display: grid; place-items: center; }
+.design.wished:not(.sel) { border-color: var(--warn); }
 .group {
   grid-column: 1 / -1; position: sticky; top: -2px; z-index: 1; display: flex; align-items: center; gap: 8px;
   margin: 6px 0 0; padding: 6px 2px; background: var(--panel); font-size: 14px;

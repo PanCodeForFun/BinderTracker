@@ -267,7 +267,9 @@ function renderPicker() {
   $("#designs").innerHTML = !cards.length ? `<p class="sub">${t("noCards")}</p>` : cards.map((c, i) => {
     const tier = TIER[tierOf(c)];
     const head = i && tierOf(cards[i - 1]) === tier.id ? "" : `<h4 class="group" ${colorStyle(tier)}><i></i>${esc(tier.label)} <small>${counts[tier.id]}</small></h4>`;
-    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}" data-card="${esc(c.id)}" ${colorStyle(tier)}>
+    const wished = isWished(c.id);
+    return `${head}<button class="design${e?.card === c.id ? " sel" : ""}${wished ? " wished" : ""}" data-card="${esc(c.id)}" ${colorStyle(tier)}>
+      <span class="star" data-star role="button" title="${t(wished ? "wishRemove" : "wishAdd")}" aria-pressed="${wished}">★</span>
       <div class="dhead"><span class="sym">${symbolFor(c.rarity)}</span><span class="rname">${esc(c.rarity === "None" ? t("noRarity") : c.rarity)}</span>${
         REVERSE_FROM.includes(c.cat) ? `<span class="rev${e?.card === c.id && e.r === "reverse" ? " on" : ""}" data-rev title="${t("reverseTip")}">Reverse</span>` : ""}</div>
       ${cardImage(c, `<span>${esc(c.name)}</span>`)}
@@ -431,7 +433,13 @@ function bindEvents() {
   document.addEventListener("click", e => { if (!e.target.closest("#slotMenu, .more")) closeSlotMenu(); });
   addEventListener("resize", closeSlotMenu);
   addEventListener("scroll", closeSlotMenu, { passive: true });
-  onClosest("#designs", "click", ".design", (d, e) => choose(d.dataset.card, !!e.target.closest("[data-rev]")));
+  onClosest("#designs", "click", ".design", (d, e) => {
+    if (!e.target.closest("[data-star]")) return choose(d.dataset.card, !!e.target.closest("[data-rev]"));
+    setWish(d.dataset.card, !isWished(d.dataset.card)).catch(() => setStatus("err", t("saveFailed")));
+    const top = $("#designs").scrollTop;
+    renderPicker();
+    $("#designs").scrollTop = top;
+  });
   on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
   on("#pickerNote", "keydown", e => { if (e.key === "Enter" && owned(pick.n)) commit({ ...owned(pick.n), note: e.target.value.trim() }); });
