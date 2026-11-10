@@ -374,6 +374,17 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .seg { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--empty); }
 .seg button { flex: 1; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; font-weight: 600; color: var(--muted); cursor: pointer; }
 .seg button.on { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+/* ---------- Upgrade-Markierung ---------- */
+.up-tag {
+  display: inline-block; vertical-align: 1px; padding: 0 5px; border-radius: 5px;
+  background: #e8833a; color: #fff; font-size: 11px; font-weight: 800;
+}
+.sm-note { font-size: 13px; color: var(--muted); max-width: 220px; }
+.sm-toggle { width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--empty); font-weight: 600; color: var(--muted); cursor: pointer; text-align: left; }
+.sm-toggle.on { background: #e8833a; border-color: #e8833a; color: #fff; }
+.up-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 12px 0; }
+.up-list .spr { width: 52px; height: 52px; }
+.up-rar { color: var(--r); font-weight: 600; }
 @media (max-width: 760px) {
   .slot-foot { gap: 3px; }
   .more { width: 20px; font-size: 13px; }

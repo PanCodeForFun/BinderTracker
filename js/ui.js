@@ -101,18 +101,19 @@ function slotHtml(n) {
   if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
 
   const e = owned(n), r = e && RARITY[e.r], card = e && findCard(n, e.card);
-  const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e);
+  const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e) || (view.filter === "upgrade" && !wantsUpgrade(e));
   const lang = e && cardLang(e);
   const visual = card
     ? cardImage(card, `<img class="spr" src="${spriteUrl(n)}" alt="">`, lang)
     : `<img class="spr" src="${spriteUrl(n)}" alt="">`;
   const tag = e && lang !== DEFAULT_CARD_LANG ? ` <span class="lang-tag" title="${esc(CARD_LANG[lang].label)}">${CARD_LANG[lang].short}</span>` : "";
+  const up = wantsUpgrade(e) ? ` <span class="up-tag" title="${t("upTag")}">↑</span>` : "";
   const sub = card ? `${card.set} · ${card.num}` : p.alt !== p.name ? p.alt : "";
 
   return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
-    <div class="de">${esc(p.name)}${tag}</div>
+    <div class="de">${esc(p.name)}${tag}${up}</div>
     <div class="sub">${esc(sub) || "&nbsp;"}</div>
     <div class="slot-foot">
       <button class="rbtn">${r ? esc(r.label) : t("pickCard")}</button>
@@ -129,6 +130,12 @@ const SLOT_MENU = [
     html: e => `<div class="sm-title">${t("cardLang")}</div><div class="seg">${CARD_LANGS.map(l =>
       `<button data-lang="${l.id}" class="${cardLang(e) === l.id ? "on" : ""}" title="${esc(l.label)}">${l.short}</button>`).join("")}</div>`,
     click: (el, e) => el.dataset.lang && { ...e, lang: el.dataset.lang },
+  },
+  {  // Upgrade gesucht: unter UPGRADE_BELOW automatisch, darüber von Hand
+    html: e => `<div class="sm-title">${t("upgrades")}</div>${autoUpgrade(e)
+      ? `<div class="sm-note">↑ ${t("upAuto", { x: TIER[UPGRADE_BELOW].label })}</div>`
+      : `<button data-up class="sm-toggle${e.up ? " on" : ""}" aria-pressed="${!!e.up}">↑ ${t("upToggle")}</button>`}`,
+    click: (el, e) => "up" in el.dataset && { ...e, up: !e.up },
   },
 ];
 const slotMenu = { n: null };
@@ -288,11 +295,29 @@ function choose(cardId, asReverse) {
   commit({ r: asReverse ? "reverse" : card.cat, card: card.id, note: $("#pickerNote").value.trim() });
 }
 
-// ---------- Sammlung: Statistik und Wert (js/prices.js) ----------
-const coll = { tab: "stats" };
+// ---------- Sammlung: Statistik, Wert (js/prices.js), Upgrades ----------
+const coll = { tab: "stats", upSort: "dex" };
 function renderCollection() {
   document.querySelectorAll(".ctab").forEach(b => b.classList.toggle("on", b.dataset.ctab === coll.tab));
-  (coll.tab === "value" ? renderValue : renderStats)();
+  $("#upNum").textContent = DEX.filter(p => wantsUpgrade(owned(p.n))).length || "";
+  ({ value: renderValue, upgrades: renderUpgrades }[coll.tab] || renderStats)();
+}
+
+// Alle Karten, die noch ersetzt werden sollen. Klick springt zum Slot.
+function renderUpgrades() {
+  const list = DEX.filter(p => wantsUpgrade(owned(p.n)));
+  if (coll.upSort === "common") list.sort((a, b) => RARITY[owned(a.n).r].rank - RARITY[owned(b.n).r].rank || a.n - b.n);
+  const manual = list.filter(p => owned(p.n).up).length;
+  const sorts = [["dex", t("sortDex")], ["common", t("upSortCommon")]];
+  $("#statsBody").innerHTML = `<p class="sub">${t("upHint", { x: esc(TIER[UPGRADE_BELOW].label) })}</p>
+    <div class="up-tools"><b>${t("upCount", { n: list.length, a: list.length - manual, m: manual })}</b>
+      <select id="upSort" title="${t("sortLabel")}">${sorts.map(([id, label]) => `<option value="${id}"${coll.upSort === id ? " selected" : ""}>${label}</option>`).join("")}</select></div>
+    ${!list.length ? `<p class="sub">${t("upEmpty")}</p>` : `<ol class="top-cards up-list">${list.map(p => {
+      const e = owned(p.n), r = RARITY[e.r], card = findCard(p.n, e.card), loc = locate(p.n);
+      return `<li data-n="${p.n}" ${colorStyle(r)}><div class="wl-thumb">${card ? cardImage(card, "", cardLang(e)) : `<img class="spr" src="${spriteUrl(p.n)}" alt="">`}</div>
+        <div><b>${pad(p.n)} ${esc(p.name)}</b><div class="sub"><span class="up-rar">${esc(r.label)}</span>${card ? ` · ${esc(card.set)} · ${esc(card.num)}` : ""}${e.up ? ` · ${t("upManual")}` : ""}</div></div>
+        <span class="sub">${t("where", { b: loc.binder, p: loc.page, slot: slotText(loc) })}</span></li>`;
+    }).join("")}</ol>`}`;
 }
 
 function renderStats() {
@@ -385,6 +410,7 @@ function bindEvents() {
   document.querySelectorAll(".ctab").forEach(b => (b.onclick = () => { coll.tab = b.dataset.ctab; renderCollection(); }));
   onClosest("#statsBody", "click", "#btnValue", loadCollectionValue);
   onClosest("#statsBody", "click", ".top-cards li[data-n]", li => goTo(+li.dataset.n));
+  onClosest("#statsBody", "change", "#upSort", s => { coll.upSort = s.value; renderUpgrades(); });
   onClosest("#overView", "click", ".mini", m => { Object.assign(view, { page: +m.dataset.page, mode: "page" }); render(); scrollTo({ top: 0 }); });
 
   onClosest("#grid", "click", ".slot[data-n]", (slot, e) => {

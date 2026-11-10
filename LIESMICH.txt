@@ -33,6 +33,14 @@ Jede belegte Karte hat neben der Seltenheit einen Knopf „…“ für Zusatzfun
 Dort stellst du die Sprache deiner Karte ein: DE (Standard), EN oder JP.
 Nicht-deutsche Karten bekommen ein kleines Kürzel neben dem Namen.
 
+Upgrades
+--------
+Karten, die du noch durch eine bessere ersetzen willst, bekommen ein oranges ↑ neben dem Namen.
+Alles unter „ex, V, GX & Co.“ (Normal, Holo, Reverse, Promo) ist automatisch ein Upgrade.
+Seltenere Karten markierst du im Menü „…“ mit „Will ich ersetzen“. Wählst du eine neue Karte
+für den Slot, verschwindet der Haken wieder. Die Grenze steht in js/config.js (UPGRADE_BELOW).
+Alle Upgrades stehen unter Sammlung → Upgrades, im Binder zeigt „Anzeigen: nur Upgrades“ sie hervorgehoben.
+
 Binder-Aufteilung
 -----------------
 Binder 1: #1 bis #640 (Seite 1 bis 40)

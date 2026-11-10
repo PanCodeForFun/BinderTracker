@@ -1,14 +1,20 @@
 // Die Sammlung: { "6": { r: "fullart", card: "sv3-215", note: "", lang: "ja" } }
 // lang (Sprache der Karte) fehlt bei deutschen Karten.
+// up: true = Upgrade gesucht, nur gespeichert ab Stufe UPGRADE_BELOW (darunter gilt es automatisch).
 // Immer im Browser gespeichert, auf claude.ai zusätzlich online.
 
 let collection = {};
 let liveDb = null;
 
+// Upgrade gesucht? Unter UPGRADE_BELOW immer, darüber nur mit Haken.
+const autoUpgrade = e => RARITY[e.r].tierRank < TIER[UPGRADE_BELOW].rank;
+const wantsUpgrade = e => !!e && (autoUpgrade(e) || e.up === true);
+
 function cleanEntry(n, v) {
   if (!BY_N.has(+n) || !RARITY[v?.r]) return null;
   const e = { r: v.r, card: typeof v.card === "string" ? v.card : "", note: String(v.note || "") };
   if (CARD_LANG[v.lang] && v.lang !== DEFAULT_CARD_LANG) e.lang = v.lang;
+  if (v.up === true && !autoUpgrade(e)) e.up = true;
   return e;
 }
 const cardLang = e => e?.lang || DEFAULT_CARD_LANG;
@@ -93,7 +99,7 @@ function backupCsv() {
     const e = collection[p.n], r = e && RARITY[e.r], card = e && findCard(p.n, e.card);
     const { binder, page, row, col } = locate(p.n);
     return [p.n, p.de, p.en, POKEDEX[i][3], binder, page, row, col, t(e ? "yes" : "no"),
-      r?.label, r && TIER[r.tier].label, card?.set, card?.num, card?.name, e && CARD_LANG[cardLang(e)].short, num(cardValue(card, e?.r === "reverse")), e?.note];
+      r?.label, r && TIER[r.tier].label, card?.set, card?.num, card?.name, e && CARD_LANG[cardLang(e)].short, e && t(wantsUpgrade(e) ? "yes" : "no"), num(cardValue(card, e?.r === "reverse")), e?.note];
   });
   return "\uFEFF" + [t("csvHead").split("|"), ...rows].map(r => r.map(cell).join(";")).join("\r\n");
 }
@@ -117,14 +123,14 @@ function csvRows(text) {
 }
 
 // Spalten wie in backupCsv: 0 Nr, 8 Vorhanden, 9 Seltenheit, 11 Set, 12 Kartennummer, dann Sprache und Notiz.
-// Sprache und Notiz werden über die Überschrift gefunden (ältere CSVs haben keine Spalte Sprache).
+// Sprache, Upgrade und Notiz werden über die Überschrift gefunden (ältere CSVs haben sie nicht alle).
 function parseCsv(text) {
   const [head, ...rows] = csvRows(text);
   if (!/^(nr|no)$/i.test(head?.[0]?.trim())) throw new Error("keine Binder-CSV");
   const yes = /^(ja|yes|y|x|1|true|wahr)$/i;
   const low = s => (s || "").trim().toLowerCase();
   const col = (re, fallback) => { const i = head.findIndex(h => re.test(h.trim())); return i >= 0 ? i : fallback; };
-  const langCol = col(/^(sprache|language)$/i, -1), noteCol = col(/^(notiz|note)$/i, 15);
+  const langCol = col(/^(sprache|language)$/i, -1), upCol = col(/^upgrade$/i, -1), noteCol = col(/^(notiz|note)$/i, 15);
   const entries = rows.filter(r => yes.test(r[8]?.trim())).map(r => {
     const n = parseInt(r[0], 10), set = low(r[11]), num = low(r[12]);
     const card = set && num && (TCG_CARDS[n] || []).find(([i, cardNum]) =>
@@ -132,7 +138,7 @@ function parseCsv(text) {
     const rarity = RARITIES.find(x => low(x.label) === low(r[9]) || x.id === low(r[9]))?.id;
     const lang = CARD_LANGS.find(l => [l.id, l.short, l.label].some(x => low(x) === low(r[langCol])))?.id;
     const note = (r[noteCol] || "").replace(/^'(?=[=+\-@\t\r])/, "");  // Schutz-Apostroph aus dem Export
-    return [n, { r: rarity || card?.[2] || "normal", card: card ? `${TCG_SETS[card[0]][0]}-${card[1]}` : "", note, lang }];
+    return [n, { r: rarity || card?.[2] || "normal", card: card ? `${TCG_SETS[card[0]][0]}-${card[1]}` : "", note, lang, up: upCol >= 0 && yes.test(r[upCol]?.trim()) }];
   });
   return cleanAll(entries);
 }
