@@ -46,6 +46,9 @@ const STRINGS = {
     shopHint: "Booster-Vorschläge aus deiner Wunschliste: Sets mit den meisten Wunschkarten zuerst.",
     shopCount: "{n} Wunschkarten", shopOne: "1 Wunschkarte",
     shopSingles: "Nicht als Booster erhältlich (Promos, Trainer-Kits …), am besten einzeln kaufen",
+    undoTip: "Rückgängig (Strg+Z)", redoTip: "Wiederholen (Strg+Y)", undone: "Rückgängig: {x}", redone: "Wiederholt: {x}",
+    nothingUndo: "Nichts zum Rückgängigmachen", nothingRedo: "Nichts zum Wiederholen",
+    wishOp: "Wunschliste: {x}", backupStep: "Backup laden",
     shopEmpty: "Noch keine Wunschkarten, also auch keine Vorschläge. Markiere Karten in der Kartenliste mit ★.",
   },
   en: {
@@ -84,6 +87,9 @@ const STRINGS = {
     shopHint: "Booster suggestions from your wishlist: sets with the most wished cards first.",
     shopCount: "{n} wished cards", shopOne: "1 wished card",
     shopSingles: "Not sold as boosters (promos, trainer kits …), best bought as singles",
+    undoTip: "Undo (Ctrl+Z)", redoTip: "Redo (Ctrl+Y)", undone: "Undone: {x}", redone: "Redone: {x}",
+    nothingUndo: "Nothing to undo", nothingRedo: "Nothing to redo",
+    wishOp: "Wishlist: {x}", backupStep: "Load backup",
     shopEmpty: "No wished cards yet, so no suggestions. Mark cards with ★ in the card list.",
   },
 };

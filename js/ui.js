@@ -219,8 +219,11 @@ async function commit(entry) {
   const n = pick.n, prev = RARITY[owned(n)?.r];
   if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(t("rarerHint", { a: prev.label, b: RARITY[entry.r].label }));
   closeModals();
-  const done = saveEntry(n, entry);
-  if (entry?.card && isWished(entry.card)) setWish(entry.card, false).catch(() => setStatus("err", t("saveFailed")));
+  let done;
+  asStep("", () => {  // Karte setzen und Wunsch erfüllen = ein Rückgängig-Schritt
+    if (entry?.card && isWished(entry.card)) setWish(entry.card, false).catch(() => setStatus("err", t("saveFailed")));
+    done = saveEntry(n, entry);
+  });
   render();
   try { await done; } catch { setStatus("err", t("saveFailed")); }
 }
@@ -244,6 +247,20 @@ function renderStats() {
       <span class="bt"><span style="width:${((counts[t.id] || 0) / max) * 100}%;background:${t.color}"></span></span>
       <b>${counts[t.id] || 0}</b></div>`).join("")}</div>
     <p class="sub">${t("withDesign", { a: entries.filter(e => e.card).length, b: entries.length })}</p>`;
+}
+
+// ---------- Rückgängig / Wiederholen (js/history.js) ----------
+async function undoRedo(dir) {
+  const res = stepHistory(dir);
+  if (!res) return toast(t(dir < 0 ? "nothingUndo" : "nothingRedo"));
+  const s = res.step;
+  if (closeZoom() || pick.n) closeModals();
+  // Einzelner Slot auf einer anderen Binderseite: dorthin blättern
+  const o = s.ops.length === 1 && s.ops[0].kind === "slot" ? s.ops[0] : null;
+  if (o && view.mode === "page" && !$(`.slot[data-n="${o.key}"]`)) goTo(+o.key); else render();
+  if (o && view.mode === "page") $(`.slot[data-n="${o.key}"]`)?.classList.add("flash");
+  toast(t(dir < 0 ? "undone" : "redone", { x: stepLabel(s) }));
+  try { await res.done; } catch { setStatus("err", t("saveFailed")); }
 }
 
 // ---------- Suche ----------
@@ -329,7 +346,15 @@ function bindEvents() {
   onClosest("#suggest", "click", "li[data-i]", li => pickSuggestion(+li.dataset.i));
   document.addEventListener("click", e => { if (!e.target.closest(".search")) $("#suggest").hidden = true; });
 
+  on("#btnUndo", "click", () => undoRedo(-1));
+  on("#btnRedo", "click", () => undoRedo(1));
   document.addEventListener("keydown", e => {
+    const key = e.key.toLowerCase();
+    // Strg+Z / Strg+Y / Strg+Umschalt+Z (Mac: Cmd); in Textfeldern bleibt es beim Text-Rückgängig
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (key === "z" || key === "y") && !e.target.matches("input, textarea")) {
+      e.preventDefault();
+      return undoRedo(key === "y" || e.shiftKey ? 1 : -1);
+    }
     if (e.key === "Escape") return closeZoom() || closeModals();
     if (e.target.matches("input, select") || document.body.classList.contains("modal-open") || view.mode !== "page") return;
     if (e.key === "ArrowLeft") turnPage(-1);
@@ -352,8 +377,10 @@ function bindEvents() {
     try {
       const next = parseBackup(await file.text());
       askConfirm(t("backupAsk", { n: Object.keys(next.collection).length }), async () => {
-        await replaceCollection(next.collection).catch(() => setStatus("err", t("saveFailed")));
-        if (next.wishlist) await replaceWishlist(next.wishlist).catch(() => setStatus("err", t("saveFailed")));
+        await asStep(t("backupStep"), async () => {
+          await replaceCollection(next.collection).catch(() => setStatus("err", t("saveFailed")));
+          if (next.wishlist) await replaceWishlist(next.wishlist).catch(() => setStatus("err", t("saveFailed")));
+        });
         render();
         toast(t("backupLoaded"));
       });
