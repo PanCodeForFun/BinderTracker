@@ -140,7 +140,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   </div>
   <div id="designs" class="designs"></div>
   <div class="modal-foot">
-    <label class="note"><span data-i18n="note">Notiz</span> <input id="pickerNote" type="text" placeholder="z. B. Zustand, Sprache, gekauft bei …" data-i18n-ph="notePh"></label>
+    <label class="note"><span data-i18n="note">Notiz</span> <input id="pickerNote" type="text" placeholder="z. B. Zustand, gekauft bei …" data-i18n-ph="notePh"></label>
     <div class="foot-btns">
       <button id="btnClear" class="ghost" data-i18n="clearSlot">Slot leeren</button>
       <select id="noDesignRarity" data-i18n-tip="noDesignRarity"></select>
@@ -160,6 +160,8 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
   <button id="zoomClose" class="x zoom-x" data-i18n-tip="close">×</button>
   <figure id="zoomBox"></figure>
 </div>
+
+<div id="slotMenu" class="slot-menu" hidden></div>
 
 <div id="toast" class="toast" hidden></div>
 

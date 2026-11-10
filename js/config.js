@@ -9,6 +9,15 @@ const LAYOUT = {
 const STORAGE_KEY = "pokebinder.v1";  // Browser-Speicher
 const DB_COLLECTION = "karten";       // Online-Speicher (nur claude.ai)
 
+// Sprache der eigenen Karte (Menü „…“ am Slot). Deutsch ist Standard und wird nicht gespeichert.
+const CARD_LANGS = [
+  { id: "de", short: "DE", label: "Deutsch" },
+  { id: "en", short: "EN", label: "English" },
+  { id: "ja", short: "JP", label: "日本語" },
+];
+const DEFAULT_CARD_LANG = "de";
+const CARD_LANG = Object.fromEntries(CARD_LANGS.map(l => [l.id, l]));
+
 // Fünf Stufen von häufig nach selten. Sie bestimmen Gruppen, Farben und Statistik.
 const TIERS = [
   { id: "base",   label: "Normal",                          color: "#9aa3ad", ink: "#111" },

@@ -23,8 +23,11 @@ function imageSources(setId, num, img, deSet, deNum) {
   const deBase = window.TCGDEX_DE?.[deSet];
   const deBig = deBase && deNum ? `${deBase}/${deNum}/high.webp` : "";
   const enBig = online.replace(/\.png$/, "_hires.png");
-  const byLang = (deFirst, enFirst) => (LANG === "en" ? enFirst : deFirst).filter(Boolean);
-  return { srcs: byLang([de, en, online], [en, de, online]), big: byLang([deBig, enBig], [enBig, deBig]) };
+  // srcsBy/bigBy: Reihenfolge je Kartensprache (Binder zeigt das Bild in der Sprache der eigenen Karte)
+  const byLang = (deFirst, enFirst) => ({ de: deFirst.filter(Boolean), en: enFirst.filter(Boolean) });
+  const srcsBy = byLang([de, en, online], [en, de, online]), bigBy = byLang([deBig, enBig], [enBig, deBig]);
+  const own = LANG === "en" ? "en" : "de";
+  return { srcs: srcsBy[own], big: bigBy[own], srcsBy, bigBy };
 }
 
 // Set-Logo (Booster-Bild in Kartenliste und Einkaufshilfe): TCGdex deutsch, TCGdex englisch,

@@ -125,8 +125,9 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .slot:not(.have) .spr { filter: grayscale(1) opacity(.45); }
 .slot .de { font-weight: 650; margin-top: 4px; }
 .slot .sub, .dmeta span { font-size: 12px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot-foot { display: flex; gap: 6px; width: 100%; margin-top: 8px; }
 .rbtn {
-  width: 100%; margin-top: 8px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel);
+  flex: 1; min-width: 0; margin-top: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel);
   font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .have .rbtn { background: var(--r); border-color: var(--r); color: var(--rInk); font-weight: 600; }
@@ -353,3 +354,27 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
   .wl-logo { width: 90px; height: 36px; }
 }
 .wl-logo.noimg { display: none; }
+
+/* ---------- Menü „…“ am Slot und Sprachkürzel ---------- */
+.more {
+  flex: none; width: 32px; padding: 0; border-radius: 8px; border: 1px solid var(--line); background: var(--panel);
+  font-size: 16px; font-weight: 700; line-height: 1; color: var(--ink); cursor: pointer;
+}
+.more:hover { background: var(--empty); }
+.lang-tag {
+  display: inline-block; vertical-align: 1px; padding: 0 5px; border-radius: 5px;
+  background: var(--ink); color: var(--panel); font-size: 11px; font-weight: 700; letter-spacing: .03em;
+}
+.slot-menu {
+  position: fixed; z-index: 40; min-width: 180px; padding: 10px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.sm-item + .sm-item { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.sm-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.seg { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--empty); }
+.seg button { flex: 1; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; font-weight: 600; color: var(--muted); cursor: pointer; }
+.seg button.on { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+@media (max-width: 760px) {
+  .slot-foot { gap: 3px; }
+  .more { width: 20px; font-size: 13px; }
+}

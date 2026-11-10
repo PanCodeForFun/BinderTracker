@@ -43,8 +43,9 @@ function askConfirm(msg, onYes) {
 }
 
 // Kartenbild: Quellen aus card.srcs der Reihe nach (siehe imageSources), sonst eine Textkarte.
-function cardImage(card, extra = "") {
-  const [src, ...rest] = card.srcs;
+// lang: Bild in dieser Kartensprache bevorzugen (ohne eigene Bilder, z. B. JP: Sprache der App).
+function cardImage(card, extra = "", lang) {
+  const [src, ...rest] = card.srcsBy?.[lang] || card.srcs;
   return `<div class="cardbox">
     <img src="${esc(src)}" data-fallback="${esc(rest.join("|"))}" alt="${esc(card.name)}" loading="lazy" onerror="cardImageFailed(this)">
     <div class="textcard">${extra}<b>${esc(card.set)}</b><span>${esc(card.num)}/${esc(card.total)}</span></div>
@@ -101,18 +102,66 @@ function slotHtml(n) {
 
   const e = owned(n), r = e && RARITY[e.r], card = e && findCard(n, e.card);
   const dim = (view.filter === "missing" && e) || (view.filter === "have" && !e);
+  const lang = e && cardLang(e);
   const visual = card
-    ? cardImage(card, `<img class="spr" src="${spriteUrl(n)}" alt="">`)
+    ? cardImage(card, `<img class="spr" src="${spriteUrl(n)}" alt="">`, lang)
     : `<img class="spr" src="${spriteUrl(n)}" alt="">`;
+  const tag = e && lang !== DEFAULT_CARD_LANG ? ` <span class="lang-tag" title="${esc(CARD_LANG[lang].label)}">${CARD_LANG[lang].short}</span>` : "";
   const sub = card ? `${card.set} · ${card.num}` : p.alt !== p.name ? p.alt : "";
 
   return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
-    <div class="de">${esc(p.name)}</div>
+    <div class="de">${esc(p.name)}${tag}</div>
     <div class="sub">${esc(sub) || "&nbsp;"}</div>
-    <button class="rbtn">${r ? esc(r.label) : t("pickCard")}</button>
+    <div class="slot-foot">
+      <button class="rbtn">${r ? esc(r.label) : t("pickCard")}</button>
+      ${e ? `<button class="more" title="${t("moreTip")}" aria-label="${t("moreTip")}">…</button>` : ""}
+    </div>
   </div>`;
+}
+
+// ---------- Menü „…“ am Slot: versteckte Zusatzfunktionen pro Karte ----------
+// Neue Funktion = neuer Eintrag: html(entry) zeichnet sie, click(element, entry) gibt den
+// geänderten Eintrag zurück (oder nichts). Gespeichert wird über saveEntry, also mit Rückgängig.
+const SLOT_MENU = [
+  {  // Sprache der Karte: DE (Standard), EN, JP
+    html: e => `<div class="sm-title">${t("cardLang")}</div><div class="seg">${CARD_LANGS.map(l =>
+      `<button data-lang="${l.id}" class="${cardLang(e) === l.id ? "on" : ""}" title="${esc(l.label)}">${l.short}</button>`).join("")}</div>`,
+    click: (el, e) => el.dataset.lang && { ...e, lang: el.dataset.lang },
+  },
+];
+const slotMenu = { n: null };
+
+function openSlotMenu(n, btn) {
+  const e = owned(n);
+  if (!e) return;
+  slotMenu.n = n;
+  const menu = $("#slotMenu");
+  menu.innerHTML = SLOT_MENU.map((item, i) => `<div class="sm-item" data-item="${i}">${item.html(e)}</div>`).join("");
+  menu.hidden = false;
+  // unter dem Knopf, rechtsbündig; passt es unten nicht, darüber
+  const b = btn.getBoundingClientRect(), m = menu.getBoundingClientRect();
+  const top = b.bottom + 6 + m.height > innerHeight ? b.top - 6 - m.height : b.bottom + 6;
+  menu.style.top = `${Math.max(8, top)}px`;
+  menu.style.left = `${Math.min(Math.max(8, b.right - m.width), innerWidth - m.width - 8)}px`;
+  menu.querySelector("button")?.focus({ preventScroll: true });
+}
+function closeSlotMenu() {
+  if ($("#slotMenu").hidden) return false;
+  $("#slotMenu").hidden = true;
+  slotMenu.n = null;
+  return true;
+}
+
+async function slotMenuClick(el) {
+  const n = slotMenu.n, item = SLOT_MENU[+el.closest(".sm-item").dataset.item];
+  const next = item?.click(el, owned(n));
+  if (!next) return;
+  closeSlotMenu();
+  const done = saveEntry(n, cleanEntry(n, next));
+  render();
+  try { await done; } catch { setStatus("err", t("saveFailed")); }
 }
 
 function renderPage() {
@@ -141,6 +190,7 @@ function renderOverview() {
 }
 
 function render() {
+  closeSlotMenu();
   const pages = pageCount(view.binder);
   view.page = Math.min(Math.max(1, view.page), pages);
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", +b.dataset.binder === view.binder));
@@ -221,6 +271,7 @@ function renderPicker() {
 
 async function commit(entry) {
   const n = pick.n, prev = RARITY[owned(n)?.r];
+  if (entry && owned(n)?.lang && !entry.lang) entry = { ...entry, lang: owned(n).lang };  // Sprache bleibt beim Kartenwechsel
   if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(t("rarerHint", { a: prev.label, b: RARITY[entry.r].label }));
   closeModals();
   let done;
@@ -336,7 +387,14 @@ function bindEvents() {
   onClosest("#statsBody", "click", ".top-cards li[data-n]", li => goTo(+li.dataset.n));
   onClosest("#overView", "click", ".mini", m => { Object.assign(view, { page: +m.dataset.page, mode: "page" }); render(); scrollTo({ top: 0 }); });
 
-  onClosest("#grid", "click", ".slot[data-n]", (slot, e) => { if (e.target.closest(".rbtn, .vis")) openPicker(+slot.dataset.n); });
+  onClosest("#grid", "click", ".slot[data-n]", (slot, e) => {
+    if (e.target.closest(".more")) return slotMenu.n === +slot.dataset.n ? closeSlotMenu() : openSlotMenu(+slot.dataset.n, e.target.closest(".more"));
+    if (e.target.closest(".rbtn, .vis")) openPicker(+slot.dataset.n);
+  });
+  onClosest("#slotMenu", "click", "button", slotMenuClick);
+  document.addEventListener("click", e => { if (!e.target.closest("#slotMenu, .more")) closeSlotMenu(); });
+  addEventListener("resize", closeSlotMenu);
+  addEventListener("scroll", closeSlotMenu, { passive: true });
   onClosest("#designs", "click", ".design", (d, e) => choose(d.dataset.card, !!e.target.closest("[data-rev]")));
   on("#btnNoDesign", "click", () => commit({ r: $("#noDesignRarity").value, card: "", note: $("#pickerNote").value.trim() }));
   on("#btnClear", "click", () => commit(null));
@@ -368,7 +426,7 @@ function bindEvents() {
       e.preventDefault();
       return undoRedo(key === "y" || e.shiftKey ? 1 : -1);
     }
-    if (e.key === "Escape") return closeZoom() || closeModals();
+    if (e.key === "Escape") return closeSlotMenu() || closeZoom() || closeModals();
     if (e.target.matches("input, select") || document.body.classList.contains("modal-open") || view.mode !== "page") return;
     if (e.key === "ArrowLeft") turnPage(-1);
     if (e.key === "ArrowRight") turnPage(1);
