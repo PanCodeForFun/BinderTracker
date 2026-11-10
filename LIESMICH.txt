@@ -27,6 +27,12 @@ Bedienung
 - "Übersicht" zeigt alle Seiten eines Binders als kleine 4x4-Raster.
 - Oben links in jedem Slot steht Reihe/Spalte (1/1 = oben links, 4/4 = unten rechts).
 
+Menü „…“ am Slot
+----------------
+Jede belegte Karte hat neben der Seltenheit einen Knopf „…“ für Zusatzfunktionen.
+Dort stellst du die Sprache deiner Karte ein: DE (Standard), EN oder JP.
+Nicht-deutsche Karten bekommen ein kleines Kürzel neben dem Namen.
+
 Binder-Aufteilung
 -----------------
 Binder 1: #1 bis #640 (Seite 1 bis 40)
