@@ -73,8 +73,26 @@ function parseBackup(text) {
   return { collection: cleanAll(Object.entries(data.collection)), wishlist: Array.isArray(data.wishlist) ? data.wishlist : null };
 }
 
-async function saveFile(filename, text) {
-  const blob = new Blob([text], { type: "application/json" });
+// CSV für Excel: eine Zeile pro Pokémon, auch fehlende (Filter „Vorhanden = nein“ = Fehlliste).
+// Semikolon und BOM, damit deutsches Excel Spalten und Umlaute richtig erkennt. Nur zum Ansehen, kein Import.
+function backupCsv() {
+  const cell = v => {
+    let s = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;  // keine Formeln in Excel
+    return /[";\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const num = v => (v == null ? "" : LANG === "de" ? v.toFixed(2).replace(".", ",") : v.toFixed(2));
+  const rows = DEX.map((p, i) => {
+    const e = collection[p.n], r = e && RARITY[e.r], card = e && findCard(p.n, e.card);
+    const { binder, page, row, col } = locate(p.n);
+    return [p.n, p.de, p.en, POKEDEX[i][3], binder, page, row, col, t(e ? "yes" : "no"),
+      r?.label, r && TIER[r.tier].label, card?.set, card?.num, card?.name, num(cardValue(card, e?.r === "reverse")), e?.note];
+  });
+  return "\uFEFF" + [t("csvHead").split("|"), ...rows].map(r => r.map(cell).join(";")).join("\r\n");
+}
+
+async function saveFile(filename, text, type = "application/json") {
+  const blob = new Blob([text], { type });
   if (window.claude?.use) {
     const dl = await window.claude.use("downloads");
     if (!dl) throw new Error("unavailable");

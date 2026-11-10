@@ -383,6 +383,14 @@ function bindEvents() {
       if (err?.code !== "declined") toast(t("backupNotSaved"));
     }
   });
+  on("#btnCsv", "click", async () => {
+    try {
+      await saveFile(`binder-${new Date().toISOString().slice(0, 10)}.csv`, backupCsv(), "text/csv;charset=utf-8");
+      toast(t("csvSaved"));
+    } catch (err) {
+      if (err?.code !== "declined") toast(t("csvNotSaved"));
+    }
+  });
   on("#fileImport", "change", async e => {
     const file = e.target.files[0];
     e.target.value = "";
