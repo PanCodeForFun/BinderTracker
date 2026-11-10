@@ -167,6 +167,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self.send_json(card_images())
         return super().do_GET()
 
+    def end_headers(self):
+        # Programmdateien immer neu prüfen lassen, damit Änderungen ohne Strg+F5 ankommen
+        if self.path.split("?", 1)[0].endswith((".html", ".js", ".css", "/")) and not self.path.startswith(("/images/", "/sources/")):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
     def send_json(self, data):
         body = json.dumps(data).encode("utf-8")
         self.send_response(200)
