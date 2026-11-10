@@ -62,8 +62,8 @@ const STRINGS = {
     valueTop: "Die 10 wertvollsten Karten",
     upgrades: "Upgrades", onlyUpgrades: "nur Upgrades", upTag: "Upgrade gesucht", upToggle: "Will ich ersetzen",
     upAuto: "Wird automatisch ersetzt (alles unter „{x}“).", upManual: "von Hand markiert",
-    upHint: "Karten, die du noch durch eine bessere ersetzen willst. Alles unter „{x}“ steht automatisch hier, seltenere Karten markierst du im Menü „…“ am Slot.",
-    upCount: "{n} Upgrades ({a} automatisch, {m} von Hand)", upEmpty: "Keine Upgrades offen.",
+    upHint: "Karten, die du durch eine bessere ersetzen willst: von Hand markiert (Menü „…“ am Slot) oder mit Karten auf der Wunschliste. Alles unter „{x}“ ist automatisch ein Upgrade und hat nur das ↑ am Slot.",
+    upCount: "{n} Pokémon ({m} von Hand markiert, {w} mit Wunschkarten)", upEmpty: "Keine Upgrades offen. Markiere Karten im Menü „…“ oder setze Karten auf die Wunschliste.",
     upSortCommon: "Häufigste zuerst", pricesFailed: "{n} Preise konnten nicht abgerufen werden.",
   },
   en: {
@@ -118,8 +118,8 @@ const STRINGS = {
     valueTop: "The 10 most valuable cards",
     upgrades: "Upgrades", onlyUpgrades: "upgrades only", upTag: "Upgrade wanted", upToggle: "Want to replace",
     upAuto: "Replaced automatically (everything below “{x}”).", upManual: "marked by hand",
-    upHint: "Cards you still want to replace with a better one. Everything below “{x}” is listed automatically; mark rarer cards in the “…” menu on the slot.",
-    upCount: "{n} upgrades ({a} automatic, {m} by hand)", upEmpty: "No open upgrades.",
+    upHint: "Cards you want to replace with a better one: marked by hand (“…” menu on the slot) or with cards on your wishlist. Everything below “{x}” is an upgrade automatically and only gets the ↑ on the slot.",
+    upCount: "{n} Pokémon ({m} marked by hand, {w} with wished cards)", upEmpty: "No open upgrades. Mark cards in the “…” menu or add cards to your wishlist.",
     upSortCommon: "Most common first", pricesFailed: "{n} prices could not be loaded.",
   },
 };

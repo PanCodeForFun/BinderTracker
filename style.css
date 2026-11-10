@@ -385,6 +385,10 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .up-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 12px 0; }
 .up-list .spr { width: 52px; height: 52px; }
 .up-rar { color: var(--r); font-weight: 600; }
+.up-wish { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.up-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 2px; border-radius: 8px; background: var(--empty); font-size: 12px; }
+.up-chip .cardbox { width: 30px; }
+.up-chip .noimg { display: none; }
 @media (max-width: 760px) {
   .slot-foot { gap: 3px; }
   .more { width: 20px; font-size: 13px; }

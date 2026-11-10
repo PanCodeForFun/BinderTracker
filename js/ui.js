@@ -299,23 +299,33 @@ function choose(cardId, asReverse) {
 const coll = { tab: "stats", upSort: "dex" };
 function renderCollection() {
   document.querySelectorAll(".ctab").forEach(b => b.classList.toggle("on", b.dataset.ctab === coll.tab));
-  $("#upNum").textContent = DEX.filter(p => wantsUpgrade(owned(p.n))).length || "";
+  $("#upNum").textContent = upgradeRows().length || "";
   ({ value: renderValue, upgrades: renderUpgrades }[coll.tab] || renderStats)();
 }
 
-// Alle Karten, die noch ersetzt werden sollen. Klick springt zum Slot.
+// Upgrade-Liste: Pokémon mit Haken „Will ich ersetzen“ oder mit Wunschkarten.
+// Automatische Upgrades (unter UPGRADE_BELOW) stehen nicht hier, nur am Slot. Klick springt zum Slot.
+function upgradeRows() {
+  const wished = new Map();
+  for (const id of wishlist.keys()) for (const n of cardById(id)?.ns || []) wished.set(n, [...(wished.get(n) || []), cardById(id)]);
+  const rows = DEX.filter(p => owned(p.n)?.up || wished.has(p.n)).map(p => ({ p, e: owned(p.n), wishes: wished.get(p.n) || [] }));
+  const rank = row => (row.e ? RARITY[row.e.r].rank : -1);
+  if (coll.upSort === "common") rows.sort((a, b) => rank(a) - rank(b) || a.p.n - b.p.n);
+  return rows;
+}
+
 function renderUpgrades() {
-  const list = DEX.filter(p => wantsUpgrade(owned(p.n)));
-  if (coll.upSort === "common") list.sort((a, b) => RARITY[owned(a.n).r].rank - RARITY[owned(b.n).r].rank || a.n - b.n);
-  const manual = list.filter(p => owned(p.n).up).length;
+  const rows = upgradeRows();
   const sorts = [["dex", t("sortDex")], ["common", t("upSortCommon")]];
   $("#statsBody").innerHTML = `<p class="sub">${t("upHint", { x: esc(TIER[UPGRADE_BELOW].label) })}</p>
-    <div class="up-tools"><b>${t("upCount", { n: list.length, a: list.length - manual, m: manual })}</b>
+    <div class="up-tools"><b>${t("upCount", { n: rows.length, m: rows.filter(x => x.e?.up).length, w: rows.filter(x => x.wishes.length).length })}</b>
       <select id="upSort" title="${t("sortLabel")}">${sorts.map(([id, label]) => `<option value="${id}"${coll.upSort === id ? " selected" : ""}>${label}</option>`).join("")}</select></div>
-    ${!list.length ? `<p class="sub">${t("upEmpty")}</p>` : `<ol class="top-cards up-list">${list.map(p => {
-      const e = owned(p.n), r = RARITY[e.r], card = findCard(p.n, e.card), loc = locate(p.n);
+    ${!rows.length ? `<p class="sub">${t("upEmpty")}</p>` : `<ol class="top-cards up-list">${rows.map(({ p, e, wishes }) => {
+      const r = e && RARITY[e.r], card = e && findCard(p.n, e.card), loc = locate(p.n);
+      const now = e ? `<span class="up-rar">${esc(r.label)}</span>${card ? ` · ${esc(card.set)} · ${esc(card.num)}` : ""}${e.up ? ` · ${t("upManual")}` : ""}` : t("missingYet");
       return `<li data-n="${p.n}" ${colorStyle(r)}><div class="wl-thumb">${card ? cardImage(card, "", cardLang(e)) : `<img class="spr" src="${spriteUrl(p.n)}" alt="">`}</div>
-        <div><b>${pad(p.n)} ${esc(p.name)}</b><div class="sub"><span class="up-rar">${esc(r.label)}</span>${card ? ` · ${esc(card.set)} · ${esc(card.num)}` : ""}${e.up ? ` · ${t("upManual")}` : ""}</div></div>
+        <div><b>${pad(p.n)} ${esc(p.name)}</b><div class="sub">${now}</div>${wishes.length ? `<div class="up-wish">
+          <span class="sub">★ ${t("wish")}:</span>${wishes.map(c => `<span class="up-chip" title="${esc(c.name)}"><span class="wl-thumb">${cardImage(c)}</span>${esc(c.set)} · ${esc(c.num)}</span>`).join("")}</div>` : ""}</div>
         <span class="sub">${t("where", { b: loc.binder, p: loc.page, slot: slotText(loc) })}</span></li>`;
     }).join("")}</ol>`}`;
 }

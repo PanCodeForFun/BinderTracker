@@ -39,7 +39,8 @@ Karten, die du noch durch eine bessere ersetzen willst, bekommen ein oranges ↑
 Alles unter „ex, V, GX & Co.“ (Normal, Holo, Reverse, Promo) ist automatisch ein Upgrade.
 Seltenere Karten markierst du im Menü „…“ mit „Will ich ersetzen“. Wählst du eine neue Karte
 für den Slot, verschwindet der Haken wieder. Die Grenze steht in js/config.js (UPGRADE_BELOW).
-Alle Upgrades stehen unter Sammlung → Upgrades, im Binder zeigt „Anzeigen: nur Upgrades“ sie hervorgehoben.
+Unter Sammlung → Upgrades stehen die von Hand markierten Karten und alle Pokémon mit Karten auf der Wunschliste
+(automatische Upgrades nicht). Im Binder hebt „Anzeigen: nur Upgrades“ alle Upgrades hervor, auch die automatischen.
 
 Binder-Aufteilung
 -----------------
