@@ -27,6 +27,11 @@ Binder
 - Pfeiltasten links/rechts blättern, "/" springt in die Suche.
 - "Übersicht" zeigt alle Seiten eines Binders als kleine 4x4-Raster.
 - "Anzeigen": alle, nur fehlende, nur vorhandene oder nur Upgrades.
+- "Filter": Generation, Primär- und Zweittyp, Besonderheit (Legendär, Mysteriös,
+  Ultrabestie, Paradox, Baby), Seltenheit, Serie, Set und Illustrator deiner Karte,
+  seltenere Karte verfügbar, Kartendesign gewählt und Notiz. Mit Filter zeigt die Seitenansicht nur die
+  Treffer aus beiden Bindern, nach Binderseite gruppiert; die Übersicht dunkelt den Rest ab. Aktive Filter
+  stehen als Chips über der Suche (✕ entfernt sie) und bleiben gespeichert.
 - Oben links in jedem Slot steht Reihe/Spalte (1/1 = oben links, 4/4 = unten rechts).
 - Rückgängig/Wiederholen: Strg+Z / Strg+Y oder die Knöpfe ↶ ↷ oben
   (100 Schritte, gilt nur bis zum Schließen der Seite).

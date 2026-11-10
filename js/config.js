@@ -11,6 +11,7 @@ const STORAGE_KEY = "pokebinder.v1";         // Sammlung
 const WISH_KEY = STORAGE_KEY + ".wunsch";    // Wunschliste
 const PRICE_KEY = STORAGE_KEY + ".preise";   // zwischengespeicherte Kartenpreise
 const LANG_KEY = "pokebinder.lang";          // Sprache der Oberfläche
+const FILTER_KEY = STORAGE_KEY + ".filter"; // gewählte Binder-Filter
 const DB_COLLECTION = "karten";
 const DB_WISH = "wunsch";
 
@@ -22,6 +23,44 @@ const CARD_LANGS = [
 ];
 const DEFAULT_CARD_LANG = "de";
 const CARD_LANG = Object.fromEntries(CARD_LANGS.map(l => [l.id, l]));
+
+// Pokémon-Typen (Bezeichner wie in data/pokedex.js) mit Farbe für die Filter-Knöpfe.
+const TYPES = [
+  { id: "normal",   de: "Normal",  en: "Normal",   color: "#a8a77a" },
+  { id: "fire",     de: "Feuer",   en: "Fire",     color: "#ee8130" },
+  { id: "water",    de: "Wasser",  en: "Water",    color: "#6390f0" },
+  { id: "grass",    de: "Pflanze", en: "Grass",    color: "#7ac74c" },
+  { id: "electric", de: "Elektro", en: "Electric", color: "#e5c531" },
+  { id: "ice",      de: "Eis",     en: "Ice",      color: "#96d9d6" },
+  { id: "fighting", de: "Kampf",   en: "Fighting", color: "#c22e28" },
+  { id: "poison",   de: "Gift",    en: "Poison",   color: "#a33ea1" },
+  { id: "ground",   de: "Boden",   en: "Ground",   color: "#e2bf65" },
+  { id: "flying",   de: "Flug",    en: "Flying",   color: "#a98ff3" },
+  { id: "psychic",  de: "Psycho",  en: "Psychic",  color: "#f95587" },
+  { id: "bug",      de: "Käfer",   en: "Bug",      color: "#a6b91a" },
+  { id: "rock",     de: "Gestein", en: "Rock",     color: "#b6a136" },
+  { id: "ghost",    de: "Geist",   en: "Ghost",    color: "#735797" },
+  { id: "dragon",   de: "Drache",  en: "Dragon",   color: "#6f35fc" },
+  { id: "dark",     de: "Unlicht", en: "Dark",     color: "#705746" },
+  { id: "steel",    de: "Stahl",   en: "Steel",    color: "#b7b7ce" },
+  { id: "fairy",    de: "Fee",     en: "Fairy",    color: "#d685ad" },
+];
+
+// Deutsche Namen der Serien (data/cards.js hat nur die englischen). Fehlende bleiben englisch.
+const SERIES_DE = {
+  "Other": "Sonstige", "Diamond & Pearl": "Diamant & Perl", "Platinum": "Platin", "Black & White": "Schwarz & Weiß",
+  "Sun & Moon": "Sonne & Mond", "Sword & Shield": "Schwert & Schild", "Scarlet & Violet": "Karmesin & Purpur",
+  "Mega Evolution": "Mega-Entwicklung",
+};
+
+// Besondere Pokémon (5. Feld in data/pokedex.js), Filter „Besonderheit“.
+const KINDS = [
+  { id: "legendary", de: "Legendär",   en: "Legendary" },
+  { id: "mythical",  de: "Mysteriös",  en: "Mythical" },
+  { id: "ultra",     de: "Ultrabestie", en: "Ultra Beast" },
+  { id: "paradox",   de: "Paradox",    en: "Paradox" },
+  { id: "baby",      de: "Baby",       en: "Baby" },
+];
 
 // Fünf Stufen von häufig nach selten. Sie bestimmen Gruppen, Farben und Statistik.
 const TIERS = [

@@ -2,7 +2,8 @@
 // Kartenbilder, Vollansicht, Preise, Bestätigen.
 
 // Welcher Bereich und welche Binderseite gerade zu sehen ist (siehe VIEWS in js/main.js).
-const view = { binder: 1, page: 1, mode: "page", filter: "all" };
+// filter: Auswahl „Anzeigen“, filters: gewählte Werte je Filter (js/filters.js), bleiben gespeichert.
+const view = { binder: 1, page: 1, mode: "page", filter: "all", filters: readJson(FILTER_KEY, {}) };
 
 const colorStyle = r => (r ? `style="--r:${r.color};--rInk:${r.ink}"` : "");
 const spriteImg = n => `<img class="spr" src="${spriteUrl(n)}" alt="">`;

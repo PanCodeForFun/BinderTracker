@@ -24,6 +24,9 @@ TCGDEX = ROOT / "sources" / "tcgdex-db"
 TCGDEX_SET_IDS = {"base1": "base1", "hgss2": "hgss2", "hgss3": "hgss3", "hgss4": "hgss4",
                   "fut20": "fut2020", "svp": "svp", "sve": "sve", "me55c": "30th-c"}
 LANG_DE, LANG_EN = "6", "9"
+# Besondere Pokémon, die die PokeAPI nicht als Merkmal führt (Dex-Nummern)
+ULTRA_BEASTS = [*range(793, 800), *range(803, 807)]
+PARADOX = [*range(984, 996), 1005, 1006, 1009, 1010, *range(1020, 1024)]
 
 # Original-Seltenheit der Karte -> Kategorie (RARITIES[].id in js/config.js)
 CATEGORY = {
@@ -55,9 +58,23 @@ def build_pokedex():
     for r in csv_rows("pokemon_species_names"):
         if r["local_language_id"] in (LANG_DE, LANG_EN):
             names.setdefault(int(r["pokemon_species_id"]), {})[r["local_language_id"]] = r["name"]
-    gen = {int(r["id"]): int(r["generation_id"]) for r in csv_rows("pokemon_species")}
-    dex = [[n, names[n].get(LANG_DE, names[n][LANG_EN]), names[n][LANG_EN], gen[n]] for n in sorted(gen)]
-    write_js("pokedex.js", "Nationaldex: [Nummer, Deutsch, Englisch, Generation]", POKEDEX=dex)
+    species = list(csv_rows("pokemon_species"))
+    gen = {int(r["id"]): int(r["generation_id"]) for r in species}
+    # Gruppe für den Filter „Besonderheit“ (KIND in js/config.js), leer bei normalen Pokémon
+    kind = {n: "ultra" for n in ULTRA_BEASTS} | {n: "paradox" for n in PARADOX}
+    for r in species:
+        for flag in ("is_mythical", "is_legendary", "is_baby"):
+            if r[flag] == "1":
+                kind.setdefault(int(r["id"]), flag[3:])
+    # Typen der Standardform (pokemon_id = Dex-Nummer), englischer Bezeichner wie in TYPES (js/config.js)
+    type_ids = {r["id"]: r["identifier"] for r in csv_rows("types")}
+    types = {}
+    for r in sorted(csv_rows("pokemon_types"), key=lambda r: int(r["slot"])):
+        types.setdefault(int(r["pokemon_id"]), []).append(type_ids[r["type_id"]])
+    dex = [[n, names[n].get(LANG_DE, names[n][LANG_EN]), names[n][LANG_EN], gen[n], types.get(n, []), *([kind[n]] if n in kind else [])]
+           for n in sorted(gen)]
+    write_js("pokedex.js", "Nationaldex: [Nummer, Deutsch, Englisch, Generation, [Primärtyp, Sekundärtyp], Besonderheit falls vorhanden]",
+             POKEDEX=dex)
     return [d[0] for d in dex]
 
 
@@ -121,7 +138,7 @@ def build_cards(max_n):
     update_tcgdex()
     german, key = tcgdex_sets(sets)
     german = [german.get(s["id"], ("", "", {})) for s in sets]
-    rarity_names, by_dex = [], {}
+    rarity_names, artists, by_dex = [], [], {}
     for set_idx, (s, cards) in enumerate(zip(sets, set_cards)):
         de_cards = german[set_idx][2]
         for c in cards:
@@ -132,8 +149,11 @@ def build_cards(max_n):
                 rarity_names.append(rarity)
             img = c["images"]["small"].replace("https://images.pokemontcg.io/", "")
             local_id, de_name = de_cards.get(key(c["number"]), ("", ""))
+            artist = c.get("artist") or ""
+            if artist not in artists:
+                artists.append(artist)
             entry = [set_idx, c["number"], CATEGORY_OF[rarity], c["name"], rarity_names.index(rarity),
-                     "" if img == f"{s['id']}/{c['number']}.png" else img, de_name, local_id]
+                     "" if img == f"{s['id']}/{c['number']}.png" else img, de_name, local_id, artists.index(artist)]
             for n in c.get("nationalPokedexNumbers") or []:
                 if 1 <= n <= max_n:
                     by_dex.setdefault(n, []).append(entry)
@@ -142,11 +162,12 @@ def build_cards(max_n):
         "cards.js",
         "Kartendaten (PokemonTCG/pokemon-tcg-data, deutsche Namen von TCGdex). "
         "TCG_SETS: [id, Name, Serie, Erscheinung, Kartenanzahl, deutscher Name, TCGdex-ID]; "
-        "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend, deutscher Name, TCGdex-Nummer]",
+        "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend, deutscher Name, TCGdex-Nummer, Illustrator-Index]",
         TCG_SETS=[[s["id"], s["name"], s["series"], s["releaseDate"][:7].replace("/", "-"), s.get("printedTotal", s["total"]),
                    de_set, tcgdex_id] for s, (tcgdex_id, de_set, _) in zip(sets, german)],
         TCG_RARITY_NAMES=rarity_names,
         TCG_CARDS=dict(sorted(by_dex.items())),
+        TCG_ARTISTS=artists,
     )
     missing = {c.get("rarity") for cards in set_cards for c in cards if c.get("supertype") == "Pokémon"} - set(CATEGORY_OF) - {None}
     if missing:
