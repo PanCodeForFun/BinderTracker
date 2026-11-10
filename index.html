@@ -36,6 +36,10 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
       <span data-i18n="data">Optionen</span></button>
   </nav>
 
+  <div class="undo-btns">
+    <button id="btnUndo" class="ghost" data-i18n-tip="undoTip" disabled>↶</button>
+    <button id="btnRedo" class="ghost" data-i18n-tip="redoTip" disabled>↷</button>
+  </div>
   <span id="status" class="status wait"></span>
 </header>
 
@@ -165,6 +169,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
 <script src="js/data.js"></script>
 <script src="js/store.js"></script>
 <script src="js/wishlist.js"></script>
+<script src="js/history.js"></script>
 <script src="js/ui.js"></script>
 </body>
 </html>

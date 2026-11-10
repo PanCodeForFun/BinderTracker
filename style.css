@@ -64,6 +64,8 @@ select { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); ba
 .ico { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sect:hover { color: var(--ink); }
 .sect.on { background: var(--accent); color: #fff; box-shadow: var(--shadow); }
+.undo-btns { display: flex; gap: 4px; }
+.undo-btns .ghost { padding: 4px 10px; font-size: 18px; line-height: 1; }
 .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .status.live::before { background: var(--ok); }

@@ -26,6 +26,7 @@ function loadLocal() {
 
 // Eintrag setzen (entry) oder löschen (null).
 async function saveEntry(n, entry) {
+  track("slot", n, collection[n], entry || undefined);  // für Rückgängig (history.js)
   if (entry) collection[n] = entry; else delete collection[n];
   saveLocal();
   if (!liveDb) return;
