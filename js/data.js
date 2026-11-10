@@ -3,7 +3,7 @@
 
 // ---------- Pokédex ----------
 // name = Anzeigename in der gewählten Sprache, alt = der andere Name
-const DEX = POKEDEX.map(([n, de, en, gen, types = []]) => ({ n, de, en, gen, types, name: localName(de, en), alt: LANG === "en" ? de : en }));
+const DEX = POKEDEX.map(([n, de, en, gen, types = [], kind = ""]) => ({ n, de, en, gen, types, kind, name: localName(de, en), alt: LANG === "en" ? de : en }));
 const BY_N = new Map(DEX.map(p => [p.n, p]));
 const MAX_N = DEX[DEX.length - 1].n;
 
@@ -50,11 +50,11 @@ function imageSources(setId, num, img, deSet, deNum) {
 }
 
 // ---------- Karten ----------
-// TCG_CARDS[Dex] = [[Set-Index, Nummer, Kategorie, englischer Name, Seltenheit-Index, Bildpfad, deutscher Name, TCGdex-Nummer], …]
-function decodeCard([setIdx, num, cat, nameEn, rarityIdx, img, nameDe, deNum]) {
+// TCG_CARDS[Dex] = [[Set-Index, Nummer, Kategorie, englischer Name, Seltenheit-Index, Bildpfad, deutscher Name, TCGdex-Nummer, Illustrator-Index], …]
+function decodeCard([setIdx, num, cat, nameEn, rarityIdx, img, nameDe, deNum, artistIdx]) {
   const set = SETS[setIdx];
   return {
-    id: `${set.id}-${num}`, date: set.date, year: set.year, total: set.total, num, cat, setIdx, rarity: TCG_RARITY_NAMES[rarityIdx],
+    id: `${set.id}-${num}`, artist: window.TCG_ARTISTS?.[artistIdx] || "", date: set.date, year: set.year, total: set.total, num, cat, setIdx, rarity: TCG_RARITY_NAMES[rarityIdx],
     tcgdex: `${set.tcgdex}-${deNum || num}`,  // für Preise (js/prices.js)
     name: localName(nameDe, nameEn), set: set.name, ...imageSources(set.id, num, img, set.tcgdex, deNum),
     keys: [nameEn, nameDe, set.en, set.de].map(s => norm(s || "")).join(" "),  // für die Kartensuche

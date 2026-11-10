@@ -9,7 +9,7 @@ const filterChip = (f, [value, label, color], on) =>
 
 function filterGroupHtml(f) {
   const options = f.options();
-  const chips = options.length ? options.map(o => filterChip(f, o, chosen(f.id).includes(o[0]))).join("") : `<span class="sub">${t("fSetEmpty")}</span>`;
+  const chips = options.length ? options.map(o => filterChip(f, o, chosen(f.id).includes(o[0]))).join("") : `<span class="sub">${t("fEmpty")}</span>`;
   return `<section class="fgroup"><h3>${t(f.label)}</h3><div class="chips">${chips}</div></section>`;
 }
 

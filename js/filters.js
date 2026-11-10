@@ -12,6 +12,10 @@ const typeOptions = () => TYPES.map(x => [x.id, localName(x.de, x.en), x.color])
 const yesNo = () => [["1", t("yes")], ["0", t("no")]];
 const flag = x => (x ? "1" : "0");
 const SERIES = [...new Set(SETS.map(s => s.series))];
+// Werte aus deinen eingetragenen Karten, sortiert (für Set und Illustrator).
+const ownedValues = (key, sort) => [...new Set(ownedCards().map(x => key(x.c)).filter(v => v != null && v !== ""))].sort(sort);
+// Gibt es eine Karte aus einer selteneren Stufe als deine?
+const rarerExists = (n, e) => cardsFor(n).some(c => RARITY[c.cat].tierRank > RARITY[e.r].tierRank);
 
 const FILTERS = [
   { id: "gen", label: "fGen",
@@ -19,11 +23,16 @@ const FILTERS = [
     value: p => String(p.gen) },
   { id: "type", label: "fType", options: typeOptions, value: p => p.types[0] },
   { id: "type2", label: "fType2", options: () => [...typeOptions(), ["none", t("fNone")]], value: p => p.types[1] || "none" },
+  { id: "kind", label: "fKind", options: () => [...KINDS.map(k => [k.id, localName(k.de, k.en)]), ["", t("fNone")]], value: p => p.kind },
   { id: "tier", label: "fTier", options: () => TIERS.map(x => [x.id, x.label, x.color]), value: (p, e) => e && RARITY[e.r].tier },
   { id: "series", label: "fSeries", options: () => SERIES.map(s => [s, localName(SERIES_DE[s], s)]), value: (p, e, card) => card && SETS[card.setIdx].series },
   { id: "set", label: "fSet",  // nur Sets, aus denen du schon eine Karte eingetragen hast
-    options: () => [...new Set(ownedCards().map(x => x.c.setIdx))].sort((a, b) => a - b).map(i => [String(i), setName(i)]),
+    options: () => ownedValues(c => c.setIdx, (a, b) => a - b).map(i => [String(i), setName(i)]),
     value: (p, e, card) => card && String(card.setIdx) },
+  { id: "artist", label: "fArtist",  // nur Illustratoren deiner eingetragenen Karten
+    options: () => ownedValues(c => c.artist, (a, b) => a.localeCompare(b)).map(a => [a, a]),
+    value: (p, e, card) => card?.artist || null },
+  { id: "rarer", label: "fRarer", options: yesNo, value: (p, e) => e && flag(rarerExists(p.n, e)) },
   { id: "design", label: "fDesign", options: yesNo, value: (p, e, card) => e && flag(card) },
   { id: "note", label: "fNote", options: yesNo, value: (p, e) => e && flag(e.note) },
 ];

@@ -69,8 +69,9 @@ const STRINGS = {
     fBtn: "Filter", fReset: "Filter zurücksetzen", fRemove: "Filter entfernen", fMatch: "{a} von {b} passen",
     fHint: "Mehrere Werte in einer Gruppe: eins davon reicht. Seltenheit, Serie, Set, Design und Notiz beziehen sich auf deine eingetragene Karte.",
     fGen: "Generation", genN: "Gen {n}", fType: "Primärtyp", fType2: "Zweittyp", fNone: "keiner",
-    fTier: "Seltenheit", fSeries: "Serie", fSet: "Set deiner Karte", fSetEmpty: "Noch keine Karte mit Set eingetragen.",
-    fDesign: "Kartendesign gewählt", fNote: "Notiz",
+    fTier: "Seltenheit", fSeries: "Serie", fSet: "Set deiner Karte",
+    fDesign: "Kartendesign gewählt", fNote: "Notiz", fKind: "Besonderheit", fArtist: "Illustrator deiner Karte",
+    fRarer: "Seltenere Karte verfügbar", fEmpty: "Noch keine passenden Karten eingetragen.",
   },
   en: {
     title: "Pokémon Binder Tracker",
@@ -130,8 +131,9 @@ const STRINGS = {
     fBtn: "Filter", fReset: "Reset filters", fRemove: "Remove filter", fMatch: "{a} of {b} match",
     fHint: "Several values in one group: any of them is enough. Rarity, series, set, design and note refer to the card you entered.",
     fGen: "Generation", genN: "Gen {n}", fType: "Primary type", fType2: "Secondary type", fNone: "none",
-    fTier: "Rarity", fSeries: "Series", fSet: "Set of your card", fSetEmpty: "No card with a set entered yet.",
-    fDesign: "Card design chosen", fNote: "Note",
+    fTier: "Rarity", fSeries: "Series", fSet: "Set of your card",
+    fDesign: "Card design chosen", fNote: "Note", fKind: "Special", fArtist: "Illustrator of your card",
+    fRarer: "Rarer card available", fEmpty: "No matching cards entered yet.",
   },
 };
 

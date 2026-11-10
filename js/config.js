@@ -53,6 +53,15 @@ const SERIES_DE = {
   "Mega Evolution": "Mega-Entwicklung",
 };
 
+// Besondere Pokémon (5. Feld in data/pokedex.js), Filter „Besonderheit“.
+const KINDS = [
+  { id: "legendary", de: "Legendär",   en: "Legendary" },
+  { id: "mythical",  de: "Mysteriös",  en: "Mythical" },
+  { id: "ultra",     de: "Ultrabestie", en: "Ultra Beast" },
+  { id: "paradox",   de: "Paradox",    en: "Paradox" },
+  { id: "baby",      de: "Baby",       en: "Baby" },
+];
+
 // Fünf Stufen von häufig nach selten. Sie bestimmen Gruppen, Farben und Statistik.
 const TIERS = [
   { id: "base",   label: "Normal",                          color: "#9aa3ad", ink: "#111" },
