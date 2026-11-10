@@ -44,6 +44,7 @@ button:disabled { opacity: .4; cursor: default; }
 .ghost { padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; font-size: 14px; white-space: nowrap; cursor: pointer; }
 .ghost:hover:not(:disabled) { background: var(--empty); }
 .ghost.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ghost.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 85%, #000); }
 .x { margin-left: auto; border: 0; background: transparent; font-size: 26px; line-height: 1; color: var(--muted); padding: 4px 8px; border-radius: 8px; }
 .x:hover { background: var(--empty); }
 select { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
@@ -213,6 +214,21 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .bt { height: 10px; margin: 0; border-radius: 5px; }
 .bl { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bl i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+
+/* Sammlung › Wert */
+.ctab { border: 0; background: transparent; padding: 8px 12px; border-radius: 8px; flex: 1; white-space: nowrap; }
+.ctab.on { background: var(--panel); box-shadow: var(--shadow); font-weight: 600; }
+#statsView .wl-tabs { max-width: 320px; }
+.value-head { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; margin-bottom: 12px; }
+.value-head .sub { flex: 1 1 300px; margin: 0; }
+.value-btn { flex: 0 1 220px; }
+.value-btn button { width: 100%; }
+.top-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.top-cards li { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; padding: 6px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+.top-cards li:hover { background: var(--bg); }
+.top-cards .sub { font-size: 12px; }
+.eur { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.price { font-size: 13px; font-weight: 600; color: var(--ok); }
 
 /* ---------- Meldungen ---------- */
 .toast, .confirm { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; border-radius: 10px; }
