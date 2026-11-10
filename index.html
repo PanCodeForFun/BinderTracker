@@ -119,7 +119,7 @@ if (location.protocol.startsWith("http")) fetch("api/status", { cache: "no-store
       <div class="foot-btns">
         <button id="btnExport" class="ghost primary" data-i18n="backupSave" data-i18n-tip="backupSaveTip">Backup speichern</button>
         <label class="ghost" data-i18n-tip="backupLoadTip">
-          <span data-i18n="backupLoad">Backup laden</span><input id="fileImport" type="file" accept=".json,application/json" hidden>
+          <span data-i18n="backupLoad">Backup laden</span><input id="fileImport" type="file" accept=".json,.csv,application/json,text/csv" hidden>
         </label>
         <button id="btnCsv" class="ghost" data-i18n="csvSave" data-i18n-tip="csvSaveTip">Als CSV (Excel)</button>
       </div>
