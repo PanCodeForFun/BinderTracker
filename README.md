@@ -20,6 +20,7 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 - **Wishlist** with three tabs: the **card list** shows all ~17,400 cards booster by booster (newest first, rarest first within a set, with a separator and set logo per booster, a "Nächstes Booster" button and a dropdown to jump to any booster; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets (with set logo) from your wished cards, with promos and similar listed separately as singles. Click any card image there to see it full size (German or English high-resolution scan when online); ×, Escape or Back closes it.
 - **Undo / redo** with Ctrl+Z and Ctrl+Y (or Ctrl+Shift+Z) and the ↶ ↷ buttons in the top bar: covers slots, wishlist stars and a whole backup import (100 steps, current session only).
 - **Backup** of the collection and wishlist as a JSON file, which can be restored on any device.
+- **CSV export** for Excel (Options → Backup): one row per Pokémon including missing ones, with binder position, rarity, card, cached value and note. View only, the JSON backup stays the way to restore.
 - Works fully offline when opened locally. Names, sprites and card data ship with the app; card images can be downloaded once (see below).
 
 ### Rarity tiers
@@ -44,7 +45,7 @@ The interface and card names are in German by default. A language menu in the he
 | --- | --- |
 | `js/config.js` | Settings: binder size, rarity tiers, colors, symbols |
 | `js/data.js` | Pokédex, card lookup, binder positions, search |
-| `js/store.js` | Saving, optional online sync, backup |
+| `js/store.js` | Saving, optional online sync, backup, CSV export |
 | `js/i18n.js` | Language menu and UI texts (German, English) |
 | `js/wishlist.js` | Wishlist, card list and shopping helper |
 | `js/history.js` | Undo / redo history for collection and wishlist |
