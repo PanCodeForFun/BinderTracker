@@ -1,13 +1,14 @@
 // Sprache der Oberfläche und der Karten-/Pokémon-Namen. Standard: Deutsch.
 
-const LANG_KEY = "pokebinder.lang";
 const LANGS = [
   { id: "de", label: "Deutsch" },
   { id: "en", label: "English" },
   { id: "ja", label: "日本語 (folgt)", disabled: true },
 ];
-let LANG = "de";
-try { LANG = LANGS.find(l => l.id === localStorage.getItem(LANG_KEY) && !l.disabled)?.id || "de"; } catch { /* kein Speicher */ }
+const LANG = LANGS.find(l => l.id === storageGet(LANG_KEY) && !l.disabled)?.id || "de";
+
+// Name in der Sprache der Oberfläche: Englisch nur bei "en", sonst Deutsch (ersatzweise Englisch).
+const localName = (de, en) => (LANG === "en" ? en : de || en);
 
 const STRINGS = {
   de: {
@@ -134,15 +135,15 @@ const t = (key, vars = {}) => {
 function applyStaticText() {
   document.documentElement.lang = LANG;
   document.title = t("title");
-  document.querySelectorAll("[data-i18n]").forEach(el => (el.textContent = t(el.dataset.i18n)));
-  document.querySelectorAll("[data-i18n-ph]").forEach(el => (el.placeholder = t(el.dataset.i18nPh)));
-  document.querySelectorAll("[data-i18n-tip]").forEach(el => {
+  $$("[data-i18n]").forEach(el => (el.textContent = t(el.dataset.i18n)));
+  $$("[data-i18n-ph]").forEach(el => (el.placeholder = t(el.dataset.i18nPh)));
+  $$("[data-i18n-tip]").forEach(el => {
     el.title = t(el.dataset.i18nTip);
     if (!/\w/.test(el.textContent)) el.setAttribute("aria-label", t(el.dataset.i18nTip));  // nur ohne sichtbaren Text
   });
 }
 
 function setLang(id) {
-  try { localStorage.setItem(LANG_KEY, id); } catch { /* egal */ }
+  storageSet(LANG_KEY, id);
   location.reload();  // Namen und Kartenlisten neu aufbauen
 }

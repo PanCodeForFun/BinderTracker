@@ -91,15 +91,20 @@ Ohne Bild siehst du stattdessen Set und Kartennummer.
 Aufbau
 ------
 index.html, style.css   Seite und Aussehen
+js/util.js              kleine Helfer für alle Dateien (DOM, Listen, Speicher, Dateien)
 js/config.js            Einstellungen: Binder-Größe, Seltenheiten, Farben
-js/data.js              Pokédex, Kartendaten, Binder-Positionen, Suche
-js/store.js             Speichern, Online-Sync, Backup, CSV
 js/i18n.js              Sprachen und Texte der Oberfläche
-js/wishlist.js          Wunschliste, Kartenliste, Einkaufshilfe
+js/data.js              Pokédex, Sets, Kartendaten, Binder-Positionen, Suche
+js/store.js             Sammlung und Wunschliste: Speichern im Browser, Online-Sync
 js/history.js           Rückgängig / Wiederholen
-js/prices.js            Kartenpreise (TCGdex) und Sammlungswert
-js/ui.js                Oberfläche und Bedienung
+js/backup.js            JSON-Backup, CSV-Export und -Import
+js/prices.js            Kartenpreise (TCGdex)
+js/ui/common.js         gemeinsame Teile der Oberfläche (Kartenbilder, Hinweise, Vollansicht)
+js/ui/*.js              je Bereich eine Datei: binder, picker (Kartenauswahl),
+                        collection (Sammlung), wishlist, search, options
+js/main.js              Bereiche umschalten, Adresse, Tastatur, Start
 data/                   erzeugte Daten (nicht von Hand ändern)
+tools/common.py         gemeinsame Helfer der Python-Skripte (Downloads, Pfade)
 tools/download_images.py lädt Kartenbilder nach images/
 tools/download_german.py lädt deutsche Set-Daten, Bilder und Set-Logos (TCGdex) nach sources/
 start.py, start.bat,    prüft/lädt Daten (mit Ladebildschirm) und startet

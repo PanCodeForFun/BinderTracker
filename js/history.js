@@ -1,12 +1,18 @@
 // Rückgängig / Wiederholen für Sammlung und Wunschliste (Strg+Z, Strg+Y, Buttons oben).
 // Ein Schritt ist eine Liste von Änderungen { kind: "slot" | "wish", key, before, after }.
-// saveEntry (store.js) und setWish (wishlist.js) melden jede Änderung über track().
+// saveEntry und setWish (js/store.js) melden jede Änderung über track().
 // Der Verlauf gilt nur für die aktuelle Sitzung.
 
 const HISTORY_MAX = 100;
 const hist = { past: [], future: [], step: null, replaying: false };
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+// Wie eine Änderung je Art wieder angewendet wird (value = before oder after).
+const HISTORY_APPLY = {
+  slot: (key, value) => saveEntry(+key, value || null),
+  wish: (key, value) => setWish(key, value !== undefined, value),
+};
 
 // Mehrere Änderungen zu einem Schritt bündeln (z. B. Karte setzen + Wunsch entfernen, Backup laden).
 // fn darf async sein, dann endet der Schritt, wenn fn fertig ist.
@@ -45,10 +51,7 @@ function stepHistory(dir) {
   updateHistoryButtons();
   const ops = dir < 0 ? [...step.ops].reverse() : step.ops;
   hist.replaying = true;
-  const jobs = ops.map(o => {
-    const v = dir < 0 ? o.before : o.after;
-    return o.kind === "slot" ? saveEntry(+o.key, v || null) : setWish(o.key, v !== undefined, v);
-  });
+  const jobs = ops.map(o => HISTORY_APPLY[o.kind](o.key, dir < 0 ? o.before : o.after));
   hist.replaying = false;
   return { step, done: Promise.all(jobs) };
 }
@@ -61,7 +64,6 @@ function stepLabel(step) {
 }
 
 function updateHistoryButtons() {
-  const undo = document.querySelector("#btnUndo"), redo = document.querySelector("#btnRedo");
-  if (undo) undo.disabled = !hist.past.length;
-  if (redo) redo.disabled = !hist.future.length;
+  $("#btnUndo").disabled = !hist.past.length;
+  $("#btnRedo").disabled = !hist.future.length;
 }

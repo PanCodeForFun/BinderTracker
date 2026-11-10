@@ -6,8 +6,13 @@ const LAYOUT = {
   binder1Size: 640,  // Binder 1: #1 bis #640, danach Binder 2
 };
 
-const STORAGE_KEY = "pokebinder.v1";  // Browser-Speicher
-const DB_COLLECTION = "karten";       // Online-Speicher (nur claude.ai)
+// Browser-Speicher (localStorage) und Online-Speicher (nur claude.ai)
+const STORAGE_KEY = "pokebinder.v1";         // Sammlung
+const WISH_KEY = STORAGE_KEY + ".wunsch";    // Wunschliste
+const PRICE_KEY = STORAGE_KEY + ".preise";   // zwischengespeicherte Kartenpreise
+const LANG_KEY = "pokebinder.lang";          // Sprache der Oberfläche
+const DB_COLLECTION = "karten";
+const DB_WISH = "wunsch";
 
 // Sprache der eigenen Karte (Menü „…“ am Slot). Deutsch ist Standard und wird nicht gespeichert.
 const CARD_LANGS = [

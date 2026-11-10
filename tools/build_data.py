@@ -8,18 +8,16 @@ import base64
 import csv
 import io
 import json
-import pathlib
 import re
 import subprocess
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+
+from common import DATA, ROOT, http_get as get
 
 RAW = "https://raw.githubusercontent.com"
 POKEAPI_CSV = f"{RAW}/PokeAPI/pokeapi/master/data/v2/csv"
 SPRITE_URL = f"{RAW}/PokeAPI/sprites/master/sprites/pokemon/{{}}.png"
 TCG = f"{RAW}/PokemonTCG/pokemon-tcg-data/master"
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "data"
 TCGDEX_GIT = "https://github.com/tcgdex/cards-database.git"
 TCGDEX = ROOT / "sources" / "tcgdex-db"
 # Sets, deren englischer Name bei TCGdex anders lautet: pokemon-tcg-data-ID -> TCGdex-ID
@@ -27,7 +25,7 @@ TCGDEX_SET_IDS = {"base1": "base1", "hgss2": "hgss2", "hgss3": "hgss3", "hgss4":
                   "fut20": "fut2020", "svp": "svp", "sve": "sve", "me55c": "30th-c"}
 LANG_DE, LANG_EN = "6", "9"
 
-# Original-Seltenheit der Karte -> Kategorie in js/config.js (RARITIES[].pool)
+# Original-Seltenheit der Karte -> Kategorie (RARITIES[].id in js/config.js)
 CATEGORY = {
     "normal": ["Common", "Uncommon", "Rare", "None"],
     "holo": ["Rare Holo", "Rare Holo Star", "Rare Prime", "LEGEND", "Classic Collection", "Rare Holo ex"],
@@ -43,18 +41,13 @@ CATEGORY = {
 CATEGORY_OF = {name: cat for cat, names in CATEGORY.items() for name in names}
 
 
-def get(url):
-    with urllib.request.urlopen(url) as r:
-        return r.read()
-
-
 def csv_rows(name):
     return csv.DictReader(io.StringIO(get(f"{POKEAPI_CSV}/{name}.csv").decode("utf-8")))
 
 
 def write_js(name, header, **variables):
     body = "".join(f"window.{k} = {json.dumps(v, ensure_ascii=False, separators=(',', ':'))};\n" for k, v in variables.items())
-    (OUT / name).write_text(f"// {header}\n{body}", encoding="utf-8")
+    (DATA / name).write_text(f"// {header}\n{body}", encoding="utf-8")
 
 
 def build_pokedex():

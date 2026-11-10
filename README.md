@@ -54,17 +54,23 @@ Planned next, roughly in this order:
 
 ## Project structure
 
+Plain HTML, CSS and JavaScript without a build step. The scripts are loaded in order by `index.html` and share their functions, so the app also works when `index.html` is opened directly. Data and logic (`js/*.js`) are kept apart from the interface (`js/ui/*.js`); every change to the collection or wishlist goes through `saveEntry` / `setWish` in `js/store.js`, which also records it for undo.
+
 | Path | Purpose |
 | --- | --- |
-| `js/config.js` | Settings: binder size, rarity tiers, colors, symbols |
-| `js/data.js` | Pokédex, card lookup, binder positions, search |
-| `js/store.js` | Saving, optional online sync, backup, CSV export and import |
+| `js/util.js` | Small shared helpers: DOM, lists, browser and online storage, file download |
+| `js/config.js` | Settings: binder size, rarity tiers, colors, symbols, storage keys |
 | `js/i18n.js` | Language menu and UI texts (German, English) |
-| `js/wishlist.js` | Wishlist, card list and shopping helper |
+| `js/data.js` | Pokédex, sets, card lookup, binder positions, search |
+| `js/store.js` | Collection and wishlist: saving in the browser, optional online sync |
 | `js/history.js` | Undo / redo history for collection and wishlist |
-| `js/prices.js` | Card prices from TCGdex and the collection value |
-| `js/ui.js` | User interface |
+| `js/backup.js` | JSON backup, CSV export and import |
+| `js/prices.js` | Card prices from TCGdex |
+| `js/ui/common.js` | Shared UI parts: view state, toasts, card images, full-size view |
+| `js/ui/binder.js`, `picker.js`, `collection.js`, `wishlist.js`, `search.js`, `options.js` | One file per area of the interface |
+| `js/main.js` | Switches between areas, address (#…), keyboard, start-up |
 | `data/` | Generated data files, do not edit by hand |
+| `tools/common.py` | Shared helpers for the Python scripts (downloads, paths) |
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
 | `tools/download_german.py` | Downloads German set data, card images and set logos from TCGdex to `sources/` |

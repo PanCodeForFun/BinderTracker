@@ -3,3 +3,6 @@ images/
 
 # Deutsche Daten und Bilder von TCGdex (tools/download_german.py)
 sources/
+
+# Python-Zwischenspeicher
+__pycache__/

@@ -8,73 +8,43 @@ Bereits vorhandene Bilder werden übersprungen, ein Abbruch ist also kein Proble
 """
 import json
 import pathlib
-import re
 import sys
-import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+from common import ROOT, download_all, read_js_vars, safe_name
+
 IMAGES = ROOT / "images"
 IMG_HOST = "https://images.pokemontcg.io/"
 
 
-def read_js_var(text, name):
-    line = next(l for l in text.splitlines() if l.startswith(f"window.{name} = "))
-    return json.loads(line.split(" = ", 1)[1].rstrip(";"))
-
-
-def all_cards():
-    """(Karten-id, Bild-URL, lokaler Pfad) wie in js/data.js."""
-    text = (ROOT / "data" / "cards.js").read_text(encoding="utf-8")
-    sets = read_js_var(text, "TCG_SETS")
-    for cards in read_js_var(text, "TCG_CARDS").values():
+def image_jobs():
+    """{Karten-id oder logo-<Set>: (Bild-URL, lokaler Pfad)}, Pfade wie in js/data.js."""
+    data = read_js_vars("cards.js")
+    sets = data["TCG_SETS"]
+    jobs = {}
+    for cards in data["TCG_CARDS"].values():
         for set_idx, num, _cat, _name, _rarity, *img in cards:
             set_id = sets[set_idx][0]
-            path = img[0] if img else f"{set_id}/{num}.png"
+            path = img[0] if img and img[0] else f"{set_id}/{num}.png"
             url = path if path.startswith("http") else IMG_HOST + path
-            local = IMAGES / set_id / (re.sub(r"[^A-Za-z0-9_-]", "_", num) + ".png")
-            yield f"{set_id}-{num}", url, local
-
-
-def download(job):
-    _id, url, local = job
-    if local.exists():
-        return "da"
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "BinderTracker"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = r.read()
-        local.parent.mkdir(parents=True, exist_ok=True)
-        local.write_bytes(data)
-        return "neu"
-    except Exception as e:
-        return f"Fehler {url}: {e}"
+            jobs[f"{set_id}-{num}"] = (url, IMAGES / set_id / f"{safe_name(num)}.png")
+    for set_id, *_ in sets:  # Set-Logos
+        jobs[f"logo-{set_id}"] = (f"{IMG_HOST}{set_id}/logo.png", IMAGES / "logos" / f"{set_id}.png")
+    return jobs
 
 
 def main():
-    jobs = {card_id: (card_id, url, local) for card_id, url, local in all_cards()}
-    for set_id, *_ in read_js_var((ROOT / "data" / "cards.js").read_text(encoding="utf-8"), "TCG_SETS"):
-        jobs[f"logo-{set_id}"] = (set_id, f"{IMG_HOST}{set_id}/logo.png", IMAGES / "logos" / f"{set_id}.png")  # Set-Logos
-    if len(sys.argv) > 1:
+    jobs = image_jobs()
+    if len(sys.argv) > 1:  # nur Karten aus einem Backup
         owned = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))["collection"]
         wanted = {e["card"] for e in owned.values() if e.get("card")}
         jobs = {k: v for k, v in jobs.items() if k in wanted}
 
-    counts = {"da": 0, "neu": 0, "Fehler": 0}
-    with ThreadPoolExecutor(16) as pool:
-        for i, result in enumerate(pool.map(download, jobs.values()), 1):
-            key = result if result in counts else "Fehler"
-            counts[key] += 1
-            if key == "Fehler":
-                print(result)
-            if i % 100 == 0 or i == len(jobs):
-                print(f"{i}/{len(jobs)} …")
-
-    if jobs and counts["Fehler"] == len(jobs):
+    result = download_all(jobs.values(), workers=16, print_errors=True)
+    if result.all_failed():
         sys.exit("FEHLER: Keine Bilder geladen. Internetverbindung prüfen.")
     IMAGES.mkdir(exist_ok=True)
     (IMAGES / "available.js").write_text("window.LOCAL_IMAGES = true;\n", encoding="utf-8")
-    print(f"Fertig: {counts['neu']} neu, {counts['da']} schon vorhanden, {counts['Fehler']} Fehler.")
+    print(f"Fertig: {result.new} neu, {result.present} schon vorhanden, {len(result.errors)} Fehler.")
 
 
 if __name__ == "__main__":
