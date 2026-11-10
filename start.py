@@ -43,6 +43,9 @@ DATA = [
     },
 ]
 
+# Heruntergeladene Daten: werden vom Browser zwischengespeichert und nicht protokolliert
+DATA_DIRS = ("/images/", "/sources/")
+
 # Ordner mit Kartenbildern für den Hintergrund des Ladebildschirms
 CARD_DIRS = [("sources/images-de", ".webp"), ("images", ".png")]
 
@@ -54,6 +57,11 @@ STATUS = {"state": "running", "percent": 0.0, "steps": [], "error": None}
 def status_snapshot():
     with LOCK:
         return json.loads(json.dumps(STATUS))
+
+
+def new_step(label, needed, state, fraction, detail):
+    """Ein Schritt für den Ladebildschirm (laden.html liest STATUS über /api/status)."""
+    return {"label": label, "needed": needed, "state": state, "fraction": fraction, "detail": detail, "done": 0, "total": 0}
 
 
 def update_percent():
@@ -97,12 +105,9 @@ def ensure_data():
     with LOCK:
         for cfg in DATA:
             present = (ROOT / cfg["marker"]).exists()
-            STATUS["steps"].append({
-                "label": cfg["label"], "needed": not present,
-                "state": "ok" if present else "wait",
-                "fraction": 1.0 if present else 0.0,
-                "detail": "vorhanden" if present else "wartet", "done": 0, "total": 0,
-            })
+            STATUS["steps"].append(new_step(
+                cfg["label"], needed=not present, state="ok" if present else "wait",
+                fraction=1.0 if present else 0.0, detail="vorhanden" if present else "wartet"))
         update_percent()
 
     for step, cfg in zip(STATUS["steps"], DATA):
@@ -127,7 +132,7 @@ def ensure_data():
 def debug_hold(seconds):
     """Hält den Ladebildschirm bei 99 %, um die Animation anzusehen (--debug-delay)."""
     with LOCK:
-        step = {"label": "Debug", "needed": True, "state": "running", "fraction": 0.99, "detail": "", "done": 0, "total": 0}
+        step = new_step("Debug", needed=True, state="running", fraction=0.99, detail="")
         STATUS["steps"].append(step)
     for left in range(seconds, 0, -1):
         with LOCK:
@@ -159,8 +164,13 @@ def card_images(count=24):
 class Handler(http.server.SimpleHTTPRequestHandler):
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".webp": "image/webp", ".js": "text/javascript"}
 
+    @property
+    def route(self):
+        """Pfad ohne ?Abfrage."""
+        return self.path.split("?", 1)[0]
+
     def do_GET(self):
-        path = self.path.split("?", 1)[0]
+        path = self.route
         if path == "/api/status":
             return self.send_json(status_snapshot())
         if path == "/api/karten":
@@ -169,7 +179,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         # Programmdateien immer neu prüfen lassen, damit Änderungen ohne Strg+F5 ankommen
-        if self.path.split("?", 1)[0].endswith((".html", ".js", ".css", "/")) and not self.path.startswith(("/images/", "/sources/")):
+        if self.route.endswith((".html", ".js", ".css", "/")) and not self.route.startswith(DATA_DIRS):
             self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
@@ -184,7 +194,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         # Status-Abfragen und Kartenbilder nicht ins Fenster schreiben
-        if not self.path.startswith(("/api/", "/sources/", "/images/")):
+        if not self.route.startswith(("/api/", *DATA_DIRS)):
             super().log_message(fmt, *args)
 
 

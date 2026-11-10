@@ -9,15 +9,16 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 ## Features
 
 - **Four sections** in the top bar: Binder, Wishlist, Collection and Options (language, backup, storage), each with an icon.
-
 - **Full National Dex** (#1–#1025) laid out as 4×4 binder pages. Slot 1 is top left, slot 16 bottom right, page 2 starts with #17.
 - **Two binders**: Binder 1 holds #1–#640 (40 pages), Binder 2 starts at #641 and grows with new generations.
 - **Search** by German or English name or by Dex number. Jumps straight to the right binder, page and slot.
 - **Card picker** with about 17,400 Pokémon cards from every English set up to September 2026. Cards are grouped into five rarity tiers and sorted by release date, each labeled with its rarity symbol (● ◆ ★ ★★ ★★★ ✦ P).
 - **Reverse Holo** option on every normal and holo card, and a ★ on every card to put it on the wishlist straight from the card picker.
-- **"…" menu** on every filled slot for extra options per card. First option: the **card language** of your own copy (DE by default, EN, JP). Non-German cards get a small "EN" or "JP" tag next to the name, the slot shows the image in that language where one exists, and changing the card keeps the language. Second option: **upgrade wanted**. Every card below the "ex, V, GX & Co." tier counts as an upgrade automatically; rarer cards get a "Will ich ersetzen" toggle. Upgrades show an orange ↑ next to the name, can be highlighted with the "nur Upgrades" filter, Collection → **Upgrades** lists the manually marked cards plus every Pokémon with cards on the wishlist (automatic ones are left out), by Dex number or most common first; click jumps to the slot. Picking a new card for the slot clears the manual mark. The threshold is `UPGRADE_BELOW` in `js/config.js`.
+- **"…" menu** on every filled slot for extra options per card:
+  - **Card language** of your own copy (DE by default, EN, JP). Non-German cards get a small "EN" or "JP" tag next to the name, the slot shows the image in that language where one exists, and changing the card keeps the language.
+  - **Upgrade wanted**: every card below the "ex, V, GX & Co." tier counts as an upgrade automatically; rarer cards get a "Will ich ersetzen" toggle. Upgrades show an orange ↑ next to the name and can be highlighted with the "nur Upgrades" filter. Picking a new card for the slot clears the manual mark. The threshold is `UPGRADE_BELOW` in `js/config.js`.
 - **Overview** of all pages in a binder as mini grids, colored by rarity tier.
-- **Collection** with two tabs: **Statistik** shows progress per binder and per rarity tier; **Wert** shows a rough value of your cards (Cardmarket trend price in euros via the TCGdex API, total and per binder, plus the 10 most valuable cards). Prices are only requested when you press "Binderwert ermitteln" or open a card, and are kept in the browser for a day. Needs an internet connection.
+- **Collection** with three tabs: **Statistik** shows progress per binder and per rarity tier; **Wert** shows a rough value of your cards (Cardmarket trend price in euros via the TCGdex API, total and per binder, plus the 10 most valuable cards; prices are only requested when you press "Binderwert ermitteln" or open a card, are kept in the browser for a day and need an internet connection); **Upgrades** lists the manually marked cards plus every Pokémon with cards on the wishlist (automatic upgrades are left out), by Dex number or most common first, and a click jumps to the slot.
 - **Wishlist** with three tabs: the **card list** shows all ~17,400 cards booster by booster (newest first, rarest first within a set, with a separator and set logo per booster, a "Nächstes Booster" button and a dropdown to jump to any booster; other sort orders available) and can be searched by Pokémon, card name, set (German or English) or number, with ★ to wish for a card; the **wishlist** shows wished cards as cards, longest-wished first, each with a "Nicht mehr wünschen" button, and cards you put into the binder leave it automatically; the **shopping helper** suggests booster sets (with set logo) from your wished cards, with promos and similar listed separately as singles. Click any card image there to see it full size (German or English high-resolution scan when online); ×, Escape or Back closes it.
 - **Undo / redo** with Ctrl+Z and Ctrl+Y (or Ctrl+Shift+Z) and the ↶ ↷ buttons in the top bar: covers slots, wishlist stars and a whole backup import (100 steps, current session only).
 - **Backup** of the collection and wishlist as a JSON file, which can be restored on any device.
@@ -40,19 +41,36 @@ Run `python start.py` (on Windows: double-click `start.bat`). It checks that the
 
 The interface and card names are in German by default. A language menu in the header switches to English (Japanese is planned); the choice is saved in the browser. In German mode the card picker shows German card and set names and the German card image where available, falling back to English.
 
+## Roadmap
+
+Planned next, roughly in this order:
+
+1. More filters (generation, set, primary type, …)
+2. Regional forms and Megas in the Dex
+3. Duplicates and a trade list
+4. A second binder for Trainers and Items
+5. Matching a photo of a binder page to its slots
+6. Japanese as a third interface language
+
 ## Project structure
+
+Plain HTML, CSS and JavaScript without a build step. The scripts are loaded in order by `index.html` and share their functions, so the app also works when `index.html` is opened directly. Data and logic (`js/*.js`) are kept apart from the interface (`js/ui/*.js`); every change to the collection or wishlist goes through `saveEntry` / `setWish` in `js/store.js`, which also records it for undo.
 
 | Path | Purpose |
 | --- | --- |
-| `js/config.js` | Settings: binder size, rarity tiers, colors, symbols |
-| `js/data.js` | Pokédex, card lookup, binder positions, search |
-| `js/store.js` | Saving, optional online sync, backup, CSV export and import |
+| `js/util.js` | Small shared helpers: DOM, lists, browser and online storage, file download |
+| `js/config.js` | Settings: binder size, rarity tiers, colors, symbols, storage keys |
 | `js/i18n.js` | Language menu and UI texts (German, English) |
-| `js/wishlist.js` | Wishlist, card list and shopping helper |
+| `js/data.js` | Pokédex, sets, card lookup, binder positions, search |
+| `js/store.js` | Collection and wishlist: saving in the browser, optional online sync |
 | `js/history.js` | Undo / redo history for collection and wishlist |
-| `js/prices.js` | Card prices from TCGdex and the collection value |
-| `js/ui.js` | User interface |
+| `js/backup.js` | JSON backup, CSV export and import |
+| `js/prices.js` | Card prices from TCGdex |
+| `js/ui/common.js` | Shared UI parts: view state, toasts, card images, full-size view |
+| `js/ui/binder.js`, `picker.js`, `collection.js`, `wishlist.js`, `search.js`, `options.js` | One file per area of the interface |
+| `js/main.js` | Switches between areas, address (#…), keyboard, start-up |
 | `data/` | Generated data files, do not edit by hand |
+| `tools/common.py` | Shared helpers for the Python scripts (downloads, paths) |
 | `tools/build_data.py` | Regenerates `data/` |
 | `tools/download_images.py` | Downloads card images to `images/` |
 | `tools/download_german.py` | Downloads German set data, card images and set logos from TCGdex to `sources/` |
