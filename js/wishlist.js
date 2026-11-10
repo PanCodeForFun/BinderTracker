@@ -27,6 +27,7 @@ function loadWishLocal() {
 }
 
 async function setWish(id, wanted, at = Date.now()) {
+  track("wish", id, wishlist.get(id), wanted ? wishlist.get(id) ?? at : undefined);  // für Rückgängig (history.js)
   if (wanted) wishlist.set(id, wishlist.get(id) || at); else wishlist.delete(id);
   saveWishLocal();
   if (!wishDb) return;
