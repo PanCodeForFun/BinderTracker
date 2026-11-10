@@ -17,7 +17,8 @@ function parseBackup(text) {
 
 // ---------- CSV ----------
 // Spalten der CSV. Überschriften stehen in i18n.js (csvHead), in derselben Reihenfolge.
-// Eine Zeile pro Pokémon, auch fehlende (Filter „Vorhanden = nein“ = Fehlliste).
+// Eine Zeile pro Slot, auch fehlende (Filter „Vorhanden = nein“ = Fehlliste). Formen haben
+// ihre Slot-Nummer (z. B. 10026 = Alola-Raichu) und stehen hinter dem Pokédex.
 const CSV_COLUMNS = [
   ({ p }) => p.n, ({ p }) => p.de, ({ p }) => p.en, ({ p }) => p.gen,
   ({ loc }) => loc.binder, ({ loc }) => loc.page, ({ loc }) => loc.row, ({ loc }) => loc.col,
@@ -38,7 +39,7 @@ function csvCell(v) {
 
 // Semikolon und BOM, damit deutsches Excel Spalten und Umlaute richtig erkennt.
 function backupCsv() {
-  const rows = DEX.map(p => {
+  const rows = SLOTS.map(p => {
     const e = collection[p.n];
     const row = { p, e, r: e && RARITY[e.r], card: e && findCard(p.n, e.card), loc: locate(p.n) };
     return CSV_COLUMNS.map(col => col(row));

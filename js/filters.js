@@ -23,6 +23,8 @@ const FILTERS = [
     value: p => String(p.gen) },
   { id: "type", label: "fType", options: typeOptions, value: p => p.types[0] },
   { id: "type2", label: "fType2", options: () => [...typeOptions(), ["none", t("fNone")]], value: p => p.types[1] || "none" },
+  { id: "form", label: "fForm", forms: true,  // nur mit Formen-Anhang
+    options: () => [...FORM_REGIONS.map(r => [r.id, localName(r.de, r.en)]), ["", t("fNone")]], value: p => p.form || "" },
   { id: "kind", label: "fKind", options: () => [...KINDS.map(k => [k.id, localName(k.de, k.en)]), ["", t("fNone")]], value: p => p.kind },
   { id: "tier", label: "fTier", options: () => TIERS.map(x => [x.id, x.label, x.color]), value: (p, e) => e && RARITY[e.r].tier },
   { id: "series", label: "fSeries", options: () => SERIES.map(s => [s, localName(SERIES_DE[s], s)]), value: (p, e, card) => card && SETS[card.setIdx].series },
@@ -35,7 +37,7 @@ const FILTERS = [
   { id: "rarer", label: "fRarer", options: yesNo, value: (p, e) => e && flag(rarerExists(p.n, e)) },
   { id: "design", label: "fDesign", options: yesNo, value: (p, e, card) => e && flag(card) },
   { id: "note", label: "fNote", options: yesNo, value: (p, e) => e && flag(e.note) },
-];
+].filter(f => !f.forms || FORM_MODE);
 
 // Auswahl „Anzeigen“ (alle, fehlende, vorhandene, Upgrades).
 const SHOW = {

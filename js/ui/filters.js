@@ -43,7 +43,7 @@ function renderFilters() {
 // „12 von 640 passen“ für den Kopf der Binderseite, nur wenn etwas gefiltert wird.
 function matchText(binder) {
   if (!anyFilter()) return "";
-  const active = activeFilters(), all = dexInBinder(binder);
+  const active = activeFilters(), all = slotsInBinder(binder);
   return t("fMatch", { a: all.filter(p => matches(p.n, active)).length, b: all.length });
 }
 

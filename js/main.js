@@ -87,11 +87,13 @@ function bindMainEvents() {
 applyStaticText();
 loadCollection();
 loadWishlist();
+const formsMoved = syncFormSlots();
 readHash();
 [bindMainEvents, bindBinderEvents, bindFilterEvents, bindPickerEvents, bindCollectionEvents, bindWishEvents, bindSearchEvents, bindOptionEvents].forEach(bind => bind());
 render();
+if (formsMoved) toast(t(FORM_MODE ? "formsMoved" : "formsMovedBack", { n: formsMoved }));
 connectLive({
   onStatus: setStatus,
-  onCollection: render,
+  onCollection: () => { syncFormSlots(); render(); },
   onWishlist: () => view.mode === "wish" && renderWishView(),
 });

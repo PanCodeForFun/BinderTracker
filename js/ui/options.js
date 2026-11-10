@@ -27,6 +27,8 @@ async function importBackup(file) {
 function bindOptionEvents() {
   $("#lang").innerHTML = optionsHtml(LANGS.map(l => [l.id, l.label, l.disabled]), LANG);
   on("#lang", "change", e => setLang(e.target.value));
+  $("#formMode").checked = FORM_MODE;
+  on("#formMode", "change", e => { writeJson(FORMS_KEY, e.target.checked); location.reload(); });  // Slots und Kartenlisten neu aufbauen
   on("#btnExport", "click", () => exportFile(`binder-backup-${today()}.json`, backupJson(), "application/json", "backupSaved", "backupNotSaved"));
   on("#btnCsv", "click", () => exportFile(`binder-${today()}.csv`, backupCsv(), "text/csv;charset=utf-8", "csvSaved", "csvNotSaved"));
   on("#fileImport", "change", e => {

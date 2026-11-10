@@ -12,6 +12,7 @@ const WISH_KEY = STORAGE_KEY + ".wunsch";    // Wunschliste
 const PRICE_KEY = STORAGE_KEY + ".preise";   // zwischengespeicherte Kartenpreise
 const LANG_KEY = "pokebinder.lang";          // Sprache der Oberfläche
 const FILTER_KEY = STORAGE_KEY + ".filter"; // gewählte Binder-Filter
+const FORMS_KEY = STORAGE_KEY + ".formen";   // Formen-Anhang an/aus
 const DB_COLLECTION = "karten";
 const DB_WISH = "wunsch";
 
@@ -52,6 +53,20 @@ const SERIES_DE = {
   "Sun & Moon": "Sonne & Mond", "Sword & Shield": "Schwert & Schild", "Scarlet & Violet": "Karmesin & Purpur",
   "Mega Evolution": "Mega-Entwicklung",
 };
+
+// Formen-Anhang: Regionalformen und Megas bekommen eigene Slots hinter dem Pokédex in Binder 2
+// (Schalter in den Optionen). Die Formen selbst stehen in data/forms.js, in dieser Reihenfolge.
+// de/en: Namensteil („Alola-Raichu“, „Alolan Raichu“), card: so beginnt der englische Kartenname.
+// Karten mit „&“ (Tag Team) bleiben beim normalen Pokémon.
+const FORM_REGIONS = [
+  { id: "alola",  de: "Alola",  en: "Alolan",   card: /^(Radiant )?Alolan / },
+  { id: "galar",  de: "Galar",  en: "Galarian", card: /^(Radiant )?Galarian / },
+  { id: "hisui",  de: "Hisui",  en: "Hisuian",  card: /^(Radiant )?Hisuian / },
+  { id: "paldea", de: "Paldea", en: "Paldean",  card: /^(Radiant )?Paldean / },
+  { id: "mega",   de: "Mega",   en: "Mega",     card: /^(M|Mega) / },
+  { id: "primal", de: "Proto",  en: "Primal",   card: /^Primal / },
+];
+const FORM_REGION = Object.fromEntries(FORM_REGIONS.map(r => [r.id, r]));
 
 // Besondere Pokémon (5. Feld in data/pokedex.js), Filter „Besonderheit“.
 const KINDS = [

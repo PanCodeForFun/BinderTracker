@@ -1,4 +1,4 @@
-"""Baut data/pokedex.js, data/sprites.js und data/cards.js neu.
+"""Baut data/pokedex.js, data/sprites.js, data/cards.js und data/forms.js neu.
 
 Aufruf (Python 3 und git, Internet nötig):  python tools/build_data.py
 Quellen: PokeAPI (Namen, Bilder), PokemonTCG/pokemon-tcg-data (Karten, Seltenheiten)
@@ -27,6 +27,11 @@ LANG_DE, LANG_EN = "6", "9"
 # Besondere Pokémon, die die PokeAPI nicht als Merkmal führt (Dex-Nummern)
 ULTRA_BEASTS = [*range(793, 800), *range(803, 807)]
 PARADOX = [*range(984, 996), 1005, 1006, 1009, 1010, *range(1020, 1024)]
+# Formen mit eigenem Slot im Formen-Anhang (FORM_REGIONS in js/config.js), in dieser Reihenfolge.
+# Slot-Nummer = Code * 10000 + Dex-Nummer, z. B. 10026 = Alola-Raichu. Nie ändern, die Sammlung speichert sie.
+FORM_CODES = {"alola": 1, "galar": 2, "hisui": 3, "paldea": 4, "mega": 5, "primal": 6}
+# Sonderformen, die keinen eigenen Slot bekommen (PokeAPI-Bezeichner enthält eines dieser Wörter)
+FORM_SKIP = {"totem", "cap"}
 
 # Original-Seltenheit der Karte -> Kategorie (RARITIES[].id in js/config.js)
 CATEGORY = {
@@ -83,6 +88,34 @@ def build_sprites(numbers):
         pngs = pool.map(lambda n: get(SPRITE_URL.format(n)), numbers)
     sprites = {n: "data:image/png;base64," + base64.b64encode(p).decode() for n, p in zip(numbers, pngs)}
     write_js("sprites.js", "Pokémon-Bilder (PokeAPI), eingebettet für Offline-Nutzung", SPRITES=sprites)
+
+
+def build_forms():
+    """Regionalformen, Megas und Proto-Formen aus der PokeAPI: eine Form pro Pokémon und Region
+    (Mega-Glurak X und Y teilen sich einen Slot). Typen und Bild nimmt die erste Variante."""
+    type_ids = {r["id"]: r["identifier"] for r in csv_rows("types")}
+    types = {}
+    for r in sorted(csv_rows("pokemon_types"), key=lambda r: int(r["slot"])):
+        types.setdefault(r["pokemon_id"], []).append(type_ids[r["type_id"]])
+    forms = {}
+    for r in sorted(csv_rows("pokemon"), key=lambda r: int(r["id"])):
+        words = set(r["identifier"].split("-"))
+        region = next((x for x in FORM_CODES if x in words), None)
+        if region and not words & FORM_SKIP:
+            base = int(r["species_id"])
+            forms.setdefault(FORM_CODES[region] * 10000 + base, [base, region, r["id"]])
+    forms = dict(sorted(forms.items()))
+    def sprite(pokemon_id):  # neue Formen haben teils noch kein Bild, dann zeigt die App das der Grundform
+        try:
+            return "data:image/png;base64," + base64.b64encode(get(SPRITE_URL.format(pokemon_id))).decode()
+        except Exception:
+            return None
+    with ThreadPoolExecutor(16) as pool:
+        sprites = dict(zip(forms, pool.map(lambda f: sprite(f[2]), forms.values())))
+    write_js("forms.js", "Formen mit eigenem Slot: [Slot-Nummer, Dex-Nummer, Region, [Primärtyp, Sekundärtyp]]; FORM_SPRITES: Bilder (PokeAPI)",
+             FORMS=[[i, base, region, types.get(pid, [])] for i, (base, region, pid) in forms.items()],
+             FORM_SPRITES={i: png for i, png in sprites.items() if png})
+    return len(forms)
 
 
 def update_tcgdex():
@@ -178,4 +211,5 @@ if __name__ == "__main__":
     numbers = build_pokedex()
     build_sprites(numbers)
     build_cards(max(numbers))
-    print(f"{len(numbers)} Pokémon gebaut.")
+    forms = build_forms()
+    print(f"{len(numbers)} Pokémon und {forms} Formen gebaut.")

@@ -10,9 +10,12 @@ let collection = {};
 const collectionDocs = new LiveDocs(DB_COLLECTION);
 
 const owned = n => collection[n];
-const ownedCount = predicate => DEX.filter(p => collection[p.n] && predicate(p)).length;
+const ownedCount = predicate => SLOTS.filter(p => collection[p.n] && predicate(p)).length;
+// Einträge der Slots im Binder (ohne Formen, solange der Formen-Anhang aus ist).
+const activeEntries = () => SLOTS.map(p => collection[p.n]).filter(Boolean);
 // Eingetragene Karten mit gewähltem Design: { n, e (Eintrag), c (Karte) }.
 const ownedCards = () => Object.entries(collection)
+  .filter(([n]) => BY_N.has(+n))
   .map(([n, e]) => ({ n: +n, e, c: findCard(+n, e.card) }))
   .filter(x => x.c);
 const cardLang = e => e?.lang || DEFAULT_CARD_LANG;
@@ -23,7 +26,7 @@ const wantsUpgrade = e => !!e && (autoUpgrade(e) || e.up === true);
 
 // Prüft einen Eintrag (z. B. aus einem Backup) und behält nur bekannte Felder. Ungültig: null.
 function cleanEntry(n, v) {
-  if (!BY_N.has(+n) || !RARITY[v?.r]) return null;
+  if (!KNOWN_N.has(+n) || !RARITY[v?.r]) return null;
   const e = { r: v.r, card: typeof v.card === "string" ? v.card : "", note: String(v.note || "") };
   if (CARD_LANG[v.lang] && v.lang !== DEFAULT_CARD_LANG) e.lang = v.lang;
   if (v.up === true && !autoUpgrade(e)) e.up = true;
@@ -50,6 +53,24 @@ async function saveEntry(n, entry) {
   if (entry) collection[n] = entry; else delete collection[n];
   saveCollectionLocal();
   await collectionDocs.write(String(n), entry);
+}
+
+// Formen-Anhang an: Formkarten (z. B. Alola-Raichu) ziehen vom Slot der Grundform in ihren Formen-Slot.
+// Aus: Einträge der Formen-Slots ziehen zurück zur Grundform. Nur in freie Slots, ohne Rückgängig-Schritt.
+// Gibt die Anzahl der Umzüge zurück.
+function syncFormSlots() {
+  let moved = 0;
+  for (const [key, e] of Object.entries(collection)) {
+    const n = +key, form = FORM_BY_N.get(n);
+    const to = form ? !FORM_MODE && form.base : FORM_MODE && e.card && formSlotOf(n, e.card);
+    if (!to || collection[to]) continue;
+    collection[to] = e;
+    delete collection[n];
+    collectionDocs.write(String(to), e).then(() => collectionDocs.write(String(n), null)).catch(() => {});
+    moved++;
+  }
+  if (moved) saveCollectionLocal();
+  return moved;
 }
 
 async function replaceCollection(next) {

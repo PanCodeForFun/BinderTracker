@@ -422,3 +422,4 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .match-head { grid-column: 1 / -1; margin: 8px 4px -4px; font-size: 14px; color: var(--muted); }
 .match-head:first-child { margin-top: 0; }
 .match-none { grid-column: 1 / -1; text-align: center; padding: 40px 0; }
+.check { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }

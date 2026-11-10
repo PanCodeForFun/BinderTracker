@@ -12,12 +12,13 @@ const setCollectionBody = html => ($("#statsBody").innerHTML = html);
 
 // ---------- Statistik ----------
 function renderStats() {
-  const entries = Object.values(collection);
+  const entries = activeEntries();
   const counts = countBy(entries, e => RARITY[e.r].tier);
   const max = Math.max(1, ...Object.values(counts));
-  const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), dexInBinder(b).length);
+  const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), slotsInBinder(b).length);
   setCollectionBody(`
-    <div class="stat-tiles">${progressTile(t("total"), entries.length, DEX.length)}${binderTile(1)}${binderTile(2)}</div>
+    <div class="stat-tiles">${progressTile(t("total"), ownedCount(p => !p.form), DEX.length)}${binderTile(1)}${binderTile(2)}${
+      FORM_LIST.length ? progressTile(t("forms"), ownedCount(p => p.form), FORM_LIST.length) : ""}</div>
     <h3>${t("byRarity")}</h3>
     <div class="bars">${TIERS.map(tier => `
       <div class="barrow"><span class="bl"><i style="background:${tier.color}"></i>${esc(tier.label)}</span>
@@ -53,7 +54,7 @@ function renderValue() {
   const sum = list => list.reduce((s, x) => s + x.v, 0);
   const tile = (label, list) => statTile(list.length ? euro(sum(list)) : "–", label);
   const oldest = Math.min(...items.map(x => x.at).filter(Boolean));
-  const noDesign = Object.keys(collection).length - items.length;
+  const noDesign = activeEntries().length - items.length;
   const top = [...priced].sort((a, b) => b.v - a.v).slice(0, 10);
   const btn = valueRun.busy
     ? `<button class="ghost primary" disabled>${t("valueLoading", { a: valueRun.done, b: valueRun.total })}</button>
@@ -77,9 +78,9 @@ function renderValue() {
 function upgradeRows() {
   const wished = new Map();
   for (const id of wishlist.keys()) for (const n of cardById(id)?.ns || []) wished.set(n, [...(wished.get(n) || []), cardById(id)]);
-  const rows = DEX.filter(p => owned(p.n)?.up || wished.has(p.n)).map(p => ({ p, e: owned(p.n), wishes: wished.get(p.n) || [] }));
+  const rows = SLOTS.filter(p => owned(p.n)?.up || wished.has(p.n)).map(p => ({ p, e: owned(p.n), wishes: wished.get(p.n) || [] }));
   const rank = row => (row.e ? RARITY[row.e.r].rank : -1);
-  if (coll.upSort === "common") rows.sort((a, b) => rank(a) - rank(b) || a.p.n - b.p.n);
+  if (coll.upSort === "common") rows.sort((a, b) => rank(a) - rank(b) || slotIndex(a.p.n) - slotIndex(b.p.n));
   return rows;
 }
 
