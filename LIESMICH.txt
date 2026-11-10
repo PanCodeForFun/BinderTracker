@@ -40,7 +40,8 @@ oder einen anderen Browser nimmst, sind sie dort nicht. Deshalb regelmäßig
 "Backup speichern" drücken. Mit "Backup laden" holst du sie zurück
 (auch auf einem anderen Rechner).
 "Als CSV (Excel)" speichert alle Pokémon als Tabelle für Excel (auch die
-fehlenden). Die CSV ist nur zum Ansehen, wiederherstellen geht nur mit dem Backup.
+fehlenden). Mit "Backup laden" kannst du die CSV auch wieder einlesen,
+auch nach Änderungen in Excel. Die Wunschliste steckt nur im JSON-Backup.
 
 Aufbau
 ------

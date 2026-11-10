@@ -67,14 +67,17 @@ async function connectLive(onStatus, onChange) {
 const backupJson = () =>
   JSON.stringify({ app: "pokebinder", version: 3, saved: new Date().toISOString(), collection, wishlist: wishEntries() }, null, 1);
 
+// JSON-Backup oder CSV (aus backupCsv, auch nach Bearbeitung in Excel). Die CSV enthält keine Wunschliste.
 function parseBackup(text) {
+  text = text.replace(/^\uFEFF/, "");
+  if (!text.trimStart().startsWith("{")) return { collection: parseCsv(text), wishlist: null };
   const data = JSON.parse(text);
   if (!data?.collection || typeof data.collection !== "object") throw new Error("kein Backup");
   return { collection: cleanAll(Object.entries(data.collection)), wishlist: Array.isArray(data.wishlist) ? data.wishlist : null };
 }
 
 // CSV für Excel: eine Zeile pro Pokémon, auch fehlende (Filter „Vorhanden = nein“ = Fehlliste).
-// Semikolon und BOM, damit deutsches Excel Spalten und Umlaute richtig erkennt. Nur zum Ansehen, kein Import.
+// Semikolon und BOM, damit deutsches Excel Spalten und Umlaute richtig erkennt. Einlesen: parseCsv.
 function backupCsv() {
   const cell = v => {
     let s = v == null ? "" : String(v);
@@ -89,6 +92,41 @@ function backupCsv() {
       r?.label, r && TIER[r.tier].label, card?.set, card?.num, card?.name, num(cardValue(card, e?.r === "reverse")), e?.note];
   });
   return "\uFEFF" + [t("csvHead").split("|"), ...rows].map(r => r.map(cell).join(";")).join("\r\n");
+}
+
+// Zerlegt CSV mit ; , oder Tab (Excel speichert je nach Land anders), Anführungszeichen wie in RFC 4180.
+function csvRows(text) {
+  const sep = [";", ",", "\t"].find(c => text.split(/\r?\n/)[0].includes(c)) || ";";
+  const rows = [[""]];
+  for (let i = 0, quoted = false; i < text.length; i++) {
+    const c = text[i], row = rows[rows.length - 1];
+    if (quoted) {
+      if (c !== '"') row[row.length - 1] += c;
+      else if (text[i + 1] === '"') { row[row.length - 1] += c; i++; }
+      else quoted = false;
+    } else if (c === '"') quoted = true;
+    else if (c === sep) row.push("");
+    else if (c === "\n") rows.push([""]);
+    else if (c !== "\r") row[row.length - 1] += c;
+  }
+  return rows.filter(r => r.some(Boolean));
+}
+
+// Spalten wie in backupCsv: 0 Nr, 8 Vorhanden, 9 Seltenheit, 11 Set, 12 Kartennummer, 15 Notiz.
+function parseCsv(text) {
+  const [head, ...rows] = csvRows(text);
+  if (!/^(nr|no)$/i.test(head?.[0]?.trim())) throw new Error("keine Binder-CSV");
+  const yes = /^(ja|yes|y|x|1|true|wahr)$/i;
+  const low = s => (s || "").trim().toLowerCase();
+  const entries = rows.filter(r => yes.test(r[8]?.trim())).map(r => {
+    const n = parseInt(r[0], 10), set = low(r[11]), num = low(r[12]);
+    const card = set && num && (TCG_CARDS[n] || []).find(([i, cardNum]) =>
+      cardNum.toLowerCase() === num && [TCG_SETS[i][1], TCG_SETS[i][5]].some(name => low(name) === set));
+    const rarity = RARITIES.find(x => low(x.label) === low(r[9]) || x.id === low(r[9]))?.id;
+    const note = (r[15] || "").replace(/^'(?=[=+\-@\t\r])/, "");  // Schutz-Apostroph aus dem Export
+    return [n, { r: rarity || card?.[2] || "normal", card: card ? `${TCG_SETS[card[0]][0]}-${card[1]}` : "", note }];
+  });
+  return cleanAll(entries);
 }
 
 async function saveFile(filename, text, type = "application/json") {
