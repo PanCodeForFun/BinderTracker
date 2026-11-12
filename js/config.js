@@ -4,6 +4,7 @@ const LAYOUT = {
   slotsPerPage: 16,  // 4 x 4
   cols: 4,
   binder1Size: 640,  // Binder 1: #1 bis #640, danach Binder 2
+  trainerBinderSize: 640,  // Trainerkarten: Binder 4, ist er voll, geht es in Binder 5 weiter usw.
 };
 
 // Browser-Speicher (localStorage) und Online-Speicher (nur claude.ai)
@@ -66,6 +67,16 @@ const FORM_REGIONS = [
   { id: "primal", de: "Proto",  en: "Primal",   card: /^Primal / },
 ];
 const FORM_REGION = Object.fromEntries(FORM_REGIONS.map(r => [r.id, r]));
+
+// Art der Trainerkarte (letztes Feld in TCG_TRAINERS, data/cards.js). „other“: alte Karten ohne Angabe.
+const TRAINER_TYPES = [
+  { id: "item",      de: "Item",        en: "Item" },
+  { id: "tool",      de: "Ausrüstung",  en: "Tool" },
+  { id: "supporter", de: "Unterstützer", en: "Supporter" },
+  { id: "stadium",   de: "Stadion",     en: "Stadium" },
+  { id: "other",     de: "Trainer",     en: "Trainer" },
+];
+const TRAINER_TYPE = Object.fromEntries(TRAINER_TYPES.map(x => [x.id, x]));
 
 // Besondere Pokémon (5. Feld in data/pokedex.js), Filter „Besonderheit“.
 const KINDS = [

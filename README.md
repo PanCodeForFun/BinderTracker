@@ -10,10 +10,11 @@ A web app for tracking a Pokémon TCG collection in binders, sorted by National 
 
 - **Four sections** in the top bar: Binder, Wishlist, Collection and Options (language, backup, storage), each with an icon.
 - **Full National Dex** (#1–#1025) laid out as 4×4 binder pages. Slot 1 is top left, slot 16 bottom right, page 2 starts with #17.
-- **Three binders**: Binder 1 holds #1–#640 (40 pages), Binder 2 starts at #641 and grows with new generations, Binder 3 holds the special cards (see below).
+- **Binders**: Binder 1 holds #1–#640 (40 pages), Binder 2 starts at #641 and grows with new generations, Binder 3 holds the special cards and Binder 4 onwards the Trainer cards (see below).
 - **Binder 3 for special cards**: Alolan, Galarian, Hisuian and Paldean forms, Megas, Primal forms (144, from `data/forms.js`) and tag teams (39, e.g. "Pikachu & Zekrom", GX and LEGEND cards) each get an optional second slot, so you can keep e.g. an Alolan Raichu next to your regular Raichu. Their cards stay selectable in the regular Pokémon slot too. One slot per form and Pokémon (Mega Charizard X and Y share one), regional forms by region, then Megas, Primal forms and tag teams, each sorted by Dex number. Regional evolutions with their own Dex number (e.g. Obstagoon) stay in the Dex. Special slots have a stable number of their own (`10026` = Alolan Raichu, tag teams 7xxxxxx) that is used in backups and the CSV. Binder 2 keeps its free end for future generations.
+- **Trainer binders (Binder 4, 5, 6 …)**: one slot per Trainer card name (about 1,390: items, tools, supporters, stadiums; variants like "Professor's Research (Professor Oak)" share one), in order of first release, so new cards are always added at the end. 640 slots per binder (`trainerBinderSize` in `js/config.js`), another binder tab appears when needed. Slots are numbered T0001, T0002 … and can be filtered by trainer type.
 - **Search** by German or English name or by Dex number. Jumps straight to the right binder, page and slot.
-- **Card picker** with about 17,700 Pokémon cards from every English set up to November 2026, including all Black Star Promos (promos missing from pokemon-tcg-data, e.g. the MEP promos, are added from TCGdex). Cards are grouped into five rarity tiers and sorted by release date, each labeled with its rarity symbol (● ◆ ★ ★★ ★★★ ✦ P).
+- **Card picker** with about 17,700 Pokémon cards and 2,800 Trainer cards from every English set up to November 2026, including all Black Star Promos (promos missing from pokemon-tcg-data, e.g. the MEP promos, are added from TCGdex). Cards are grouped into five rarity tiers and sorted by release date, each labeled with its rarity symbol (● ◆ ★ ★★ ★★★ ✦ P).
 - **Reverse Holo** option on every normal and holo card, and a ★ on every card to put it on the wishlist straight from the card picker.
 - **"…" menu** on every filled slot for extra options per card:
   - **Card language** of your own copy (DE by default, EN, JP). Non-German cards get a small "EN" or "JP" tag next to the name, the slot shows the image in that language where one exists, and changing the card keeps the language.
@@ -47,10 +48,9 @@ The interface and card names are in German by default. A language menu in the he
 
 Planned next, roughly in this order:
 
-1. Binder 4 for Trainer and Item cards
-2. Duplicates and a trade list
-3. Matching a photo of a binder page to its slots
-4. Japanese as a third interface language
+1. Duplicates and a trade list
+2. Matching a photo of a binder page to its slots
+3. Japanese as a third interface language
 
 ## Project structure
 

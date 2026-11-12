@@ -47,9 +47,16 @@ CATEGORY = {
     "fullart": ["Rare Ultra", "Ultra Rare", "MEGA_ATTACK_RARE"],
     "ir": ["Illustration Rare", "Trainer Gallery Rare Holo"],
     "sir": ["Special Illustration Rare"],
+    "holo_extra": ["ACE SPEC Rare", "Rare ACE"],  # nur Trainer, zählt als Holo
     "hyper": ["Rare Rainbow", "Rare Secret", "Hyper Rare", "Mega Hyper Rare", "Black White Rare", "Futuristic Rare", "Pikachu Rare"],
 }
-CATEGORY_OF = {name: cat for cat, names in CATEGORY.items() for name in names}
+CATEGORY_OF = {name: cat.replace("_extra", "") for cat, names in CATEGORY.items() for name in names}
+# Trainer-Art (TRAINER_TYPES in js/config.js) aus den Untertypen von pokemon-tcg-data bzw. trainerType von TCGdex
+TRAINER_TYPE = {"Pokémon Tool": "tool", "Technical Machine": "tool", "Item": "item", "Supporter": "supporter", "Stadium": "stadium"}
+
+
+def trainer_type(subtypes):
+    return next((TRAINER_TYPE[t] for t in TRAINER_TYPE if t in subtypes), "other")
 
 
 def csv_rows(name):
@@ -171,8 +178,8 @@ def ts_value(text, field):
     return m[1] if m else ""
 
 
-def add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, rarity_names, artists, key, max_n):
-    """Promokarten, die pokemon-tcg-data nicht kennt, aus TCGdex ergänzen: fehlende Karten in bekannten
+def add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, trainers, rarity_names, artists, key, max_n):
+    """Promokarten (Pokémon und Trainer), die pokemon-tcg-data nicht kennt, aus TCGdex ergänzen: fehlende Karten in bekannten
     Promo-Sets (z. B. SVP) und ganze Promo-Sets (z. B. MEP). Bild online von TCGdex (englisch)."""
     known_sets = {tid: i for i, (tid, _, _) in enumerate(german) if tid}
     ids = {row[0] for row in set_rows}
@@ -198,7 +205,8 @@ def add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, rarity_names, 
         for f in files:
             text = f.read_text(encoding="utf-8")
             dex = re.search(r"dexId:\s*\[([\d,\s]+)\]", text)
-            if key(f.stem) in have or ts_value(text, "category") != "Pokemon" or not dex:
+            category = ts_value(text, "category")
+            if key(f.stem) in have or not (category == "Trainer" or category == "Pokemon" and dex):
                 continue
             card_names = ts_names(text)
             artist = ts_value(text, "illustrator")
@@ -208,6 +216,10 @@ def add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, rarity_names, 
             img = f"https://assets.tcgdex.net/en/{serie_id}/{tid}/{f.stem}/low.webp"
             entry = [set_idx, num, "promo", card_names.get("en", ""), rarity_names.index("Promo"), img,
                      card_names.get("de", ""), f.stem, artists.index(artist)]
+            if category == "Trainer":
+                trainers.append(entry + [trainer_type([ts_value(text, "trainerType")])])
+                added += 1
+                continue
             for n in map(int, re.findall(r"\d+", dex[1])):
                 if 1 <= n <= max_n:
                     by_dex.setdefault(n, []).append(entry)
@@ -223,12 +235,12 @@ def build_cards(max_n):
     update_tcgdex()
     german, key, found = tcgdex_sets(sets)
     german = [german.get(s["id"], ("", "", {})) for s in sets]
-    rarity_names, artists, by_dex = [], [], {}
+    rarity_names, artists, by_dex, trainers = [], [], {}, []
     for set_idx, (s, cards) in enumerate(zip(sets, set_cards)):
         de_cards = german[set_idx][2]
         for c in cards:
             rarity = c.get("rarity") or "None"
-            if c.get("supertype") != "Pokémon" or rarity not in CATEGORY_OF:
+            if c.get("supertype") not in ("Pokémon", "Trainer") or rarity not in CATEGORY_OF:
                 continue
             if rarity not in rarity_names:
                 rarity_names.append(rarity)
@@ -239,29 +251,34 @@ def build_cards(max_n):
                 artists.append(artist)
             entry = [set_idx, c["number"], CATEGORY_OF[rarity], c["name"], rarity_names.index(rarity),
                      "" if img == f"{s['id']}/{c['number']}.png" else img, de_name, local_id, artists.index(artist)]
+            if c["supertype"] == "Trainer":
+                trainers.append(entry + [trainer_type(c.get("subtypes") or [])])
+                continue
             for n in c.get("nationalPokedexNumbers") or []:
                 if 1 <= n <= max_n:
                     by_dex.setdefault(n, []).append(entry)
 
     set_rows = [[s["id"], s["name"], s["series"], s["releaseDate"][:7].replace("/", "-"), s.get("printedTotal", s["total"]),
                  de_set, tcgdex_id] for s, (tcgdex_id, de_set, _) in zip(sets, german)]
-    add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, rarity_names, artists, key, max_n)
+    add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, trainers, rarity_names, artists, key, max_n)
     # Sets nach Erscheinung (die App sortiert über den Set-Index), Karten auf die neuen Indizes umstellen
     order = sorted(range(len(set_rows)), key=lambda i: set_rows[i][3])
     new_idx = {old: new for new, old in enumerate(order)}
     set_rows = [set_rows[i] for i in order]
-    for entry in {id(e): e for cards in by_dex.values() for e in cards}.values():
+    for entry in {id(e): e for cards in [*by_dex.values(), trainers] for e in cards}.values():
         entry[0] = new_idx[entry[0]]
 
     write_js(
         "cards.js",
         "Kartendaten (PokemonTCG/pokemon-tcg-data, deutsche Namen von TCGdex). "
         "TCG_SETS: [id, Name, Serie, Erscheinung, Kartenanzahl, deutscher Name, TCGdex-ID]; "
-        "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend, deutscher Name, TCGdex-Nummer, Illustrator-Index]",
+        "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend, deutscher Name, TCGdex-Nummer, Illustrator-Index]; "
+        "TCG_TRAINERS: Trainerkarten, gleiche Felder plus Trainer-Art",
         TCG_SETS=set_rows,
         TCG_RARITY_NAMES=rarity_names,
         TCG_CARDS=dict(sorted(by_dex.items())),
         TCG_ARTISTS=artists,
+        TCG_TRAINERS=sorted(trainers, key=lambda e: e[0]),
     )
     missing = {c.get("rarity") for cards in set_cards for c in cards if c.get("supertype") == "Pokémon"} - set(CATEGORY_OF) - {None}
     if missing:
