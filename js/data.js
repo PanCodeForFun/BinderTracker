@@ -17,6 +17,18 @@ const FORMS_3 = (window.FORMS || []).filter(([, base, region]) => DEX_BY_N.has(b
   return named({ ...b, n, base, members: [base], special: region, types }, `${r.de}-${b.de}`, `${r.en} ${b.en}`);
 });
 
+// Feste Nummer aus dem englischen Namen (bleibt gleich, auch wenn neue Karten dazukommen): start + 0…999999.
+function idsFromNames(start) {
+  const used = new Set();
+  return en => {
+    let h = 0;
+    for (const ch of en) h = (h * 31 + ch.codePointAt(0)) % 1000000;
+    while (used.has(h)) h = (h + 1) % 1000000;
+    used.add(h);
+    return start + h;
+  };
+}
+
 // Tag Teams aus den Kartendaten: ein Slot pro Team („Pikachu & Zekrom“), egal ob GX oder LEGEND.
 const tagTeamOf = nameEn => (nameEn.includes(" & ") ? nameEn.replace(/[- ](GX|LEGEND)$/, "") : null);
 function buildTagTeams() {
@@ -29,15 +41,7 @@ function buildTagTeams() {
     team.de ||= (c[6] || "").replace(/[- ](GX|LEGENDE?)$/i, "");
     teams.set(en, team);
   }
-  // Nummer aus dem englischen Namen (bleibt gleich, auch wenn neue Teams dazukommen)
-  const used = new Set();
-  const idOf = en => {
-    let h = 0;
-    for (const ch of en) h = (h * 31 + ch.codePointAt(0)) % 1000000;
-    while (used.has(h)) h = (h + 1) % 1000000;
-    used.add(h);
-    return 7000000 + h;
-  };
+  const idOf = idsFromNames(7000000);
   return [...teams.values()]
     .map(team => ({ ...team, members: team.members.sort((a, b) => a - b) }))
     .sort((a, b) => a.members[0] - b.members[0] || a.en.localeCompare(b.en))
@@ -52,14 +56,41 @@ const SPECIAL_BY_N = new Map(SPECIALS.map(p => [p.n, p]));
 const SPECIALS_OF = new Map();  // Dex-Nummer -> ihre Sonderkarten-Slots (für die Suche)
 for (const p of SPECIALS) for (const m of p.members) SPECIALS_OF.set(m, [...(SPECIALS_OF.get(m) || []), p]);
 
-// Alle Slots (Pokédex, dann Sonderkarten), nach Nummer abrufbar.
-const SLOTS = [...DEX, ...SPECIALS];
+// ---------- Trainerkarten (Binder 4 und folgende) ----------
+// Ein Slot pro Kartenname (Varianten wie „Professor's Research (Professor Oak)“ zusammen), in der
+// Reihenfolge des ersten Erscheinens. Neue Karten hängen hinten an. TCG_TRAINERS ist nach Set sortiert.
+const trainerName = name => (name || "").replace(/\s*\(.*\)$/, "");
+const TRAINER_CARDS = new Map();  // Slot-Nummer -> Rohdaten der Karten
+function buildTrainers() {
+  const byName = new Map(), idOf = idsFromNames(8000000);
+  for (const c of window.TCG_TRAINERS || []) {
+    const en = trainerName(c[3]);
+    if (!byName.has(en)) byName.set(en, { en, de: "", type: c[9], cards: [] });
+    const slot = byName.get(en);
+    slot.de ||= trainerName(c[6]);
+    slot.cards.push(c);
+  }
+  return [...byName.values()].map(({ en, de, type, cards }, i) => {
+    const n = idOf(en);
+    TRAINER_CARDS.set(n, cards);
+    return named({ n, pos: i + 1, special: "trainer", trainerType: type, types: [], members: [], kind: "" }, de || en, en);
+  });
+}
+const TRAINERS = buildTrainers();
+const TRAINER_INDEX = new Map(TRAINERS.map((p, i) => [p.n, i]));
+
+// Alle Slots (Pokédex, Sonderkarten, Trainer), nach Nummer abrufbar.
+const SLOTS = [...DEX, ...SPECIALS, ...TRAINERS];
 const BY_N = new Map(SLOTS.map(p => [p.n, p]));
 
-// Sonderkarten zeigen die Nummer ihres (ersten) Pokémon.
+// Sonderkarten zeigen die Nummer ihres (ersten) Pokémon, Trainer ihre Reihenfolge (T0001).
 const baseOf = n => SPECIAL_BY_N.get(n)?.base ?? n;
-const pad = n => "#" + String(baseOf(n)).padStart(4, "0");
-const spriteUrl = n => SPRITES[n] || window.FORM_SPRITES?.[n] || SPRITES[baseOf(n)] || "";
+const pad = n => (TRAINER_INDEX.has(n) ? "T" + String(TRAINER_INDEX.get(n) + 1).padStart(4, "0") : "#" + String(baseOf(n)).padStart(4, "0"));
+// Trainer bekommen statt eines Pokémon-Bilds eine Kartenskizze mit „T“.
+const TRAINER_ICON = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <rect x="26" y="12" width="44" height="72" rx="5" fill="#e8e3d6" stroke="#8a8170" stroke-width="3"/>
+  <text x="48" y="58" font-family="sans-serif" font-size="30" font-weight="700" text-anchor="middle" fill="#8a8170">T</text></svg>`);
+const spriteUrl = n => (TRAINER_INDEX.has(n) ? TRAINER_ICON : SPRITES[n] || window.FORM_SPRITES?.[n] || SPRITES[baseOf(n)] || "");
 
 // ---------- Sets ----------
 // TCG_SETS[i] = [id, englischer Name, Serie, Erscheinung (JJJJ-MM), Kartenanzahl, deutscher Name, TCGdex-id]
@@ -116,6 +147,7 @@ function decodeCard([setIdx, num, cat, nameEn, rarityIdx, img, nameDe, deNum, ar
 const isFormCard = (region, nameEn) => FORM_REGION[region].card.test(nameEn) && !nameEn.includes(" & ");
 // Rohdaten der Karten eines Slots. Sonderkarten nehmen ihre Karten aus denen ihres Pokémon.
 function rawCardsFor(n) {
+  if (TRAINER_CARDS.has(n)) return TRAINER_CARDS.get(n);
   const sp = SPECIAL_BY_N.get(n);
   if (!sp) return TCG_CARDS[n] || [];
   const cards = TCG_CARDS[sp.base] || [];
@@ -168,28 +200,43 @@ function searchCards(query) {
 
 // ---------- Binder ----------
 // Binder 1: #1 bis #640, Binder 2: ab #641 (wächst mit neuen Pokémon, dahinter frei),
-// Binder 3: Sonderkarten (Zweitslots, siehe oben).
-const BINDERS = [1, 2, 3];
-const SPECIAL_BINDER = 3;
+// Binder 3: Sonderkarten (Zweitslots, siehe oben), ab Binder 4: Trainerkarten (je trainerBinderSize Slots).
+const SPECIAL_BINDER = 3, TRAINER_BINDER = 4;
+const TRAINER_SIZE = LAYOUT.trainerBinderSize;
+const BINDERS = [1, 2, SPECIAL_BINDER, ...range(Math.max(1, Math.ceil(TRAINERS.length / TRAINER_SIZE)), TRAINER_BINDER)];
 const SPECIAL_INDEX = new Map(SPECIALS.map((p, i) => [p.n, i]));
-const binderOffset = binder => (binder === 2 ? LAYOUT.binder1Size : 0);
-const binderOf = n => (SPECIAL_INDEX.has(n) ? SPECIAL_BINDER : n <= LAYOUT.binder1Size ? 1 : 2);
+const isTrainerBinder = binder => binder >= TRAINER_BINDER;
+const binderOffset = binder => (binder === 2 ? LAYOUT.binder1Size : isTrainerBinder(binder) ? (binder - TRAINER_BINDER) * TRAINER_SIZE : 0);
+function binderOf(n) {
+  if (SPECIAL_INDEX.has(n)) return SPECIAL_BINDER;
+  if (TRAINER_INDEX.has(n)) return TRAINER_BINDER + Math.floor(TRAINER_INDEX.get(n) / TRAINER_SIZE);
+  return n <= LAYOUT.binder1Size ? 1 : 2;
+}
 const inBinder = (binder, n) => binderOf(n) === binder;
 const slotsInBinder = binder => SLOTS.filter(p => inBinder(binder, p.n));
-const binderSize = binder =>
-  binder === SPECIAL_BINDER ? SPECIALS.length : binder === 1 ? Math.min(MAX_N, LAYOUT.binder1Size) : MAX_N - LAYOUT.binder1Size;
-// Nummer am Platz i (ab 0) eines Binders: Dex-Nummer (hinter dem Pokédex frei für neue Pokémon), Sonderkarte oder null (leer).
-const slotAt = (binder, i) => (binder === SPECIAL_BINDER ? SPECIALS[i]?.n ?? null : binderOffset(binder) + i + 1);
+function binderSize(binder) {
+  if (binder === SPECIAL_BINDER) return SPECIALS.length;
+  if (isTrainerBinder(binder)) return Math.min(TRAINER_SIZE, TRAINERS.length - binderOffset(binder));
+  return binder === 1 ? Math.min(MAX_N, LAYOUT.binder1Size) : MAX_N - LAYOUT.binder1Size;
+}
+// Nummer am Platz i (ab 0) eines Binders: Dex-Nummer (hinter dem Pokédex frei für neue Pokémon),
+// Sonderkarte, Trainer oder null (leer).
+function slotAt(binder, i) {
+  if (binder === SPECIAL_BINDER) return SPECIALS[i]?.n ?? null;
+  if (isTrainerBinder(binder)) return i < TRAINER_SIZE ? TRAINERS[binderOffset(binder) + i]?.n ?? null : null;
+  return binderOffset(binder) + i + 1;
+}
+// Platz eines Slots in seinem Binder (ab 0)
+const indexInBinder = n => SPECIAL_INDEX.get(n) ?? (TRAINER_INDEX.has(n) ? TRAINER_INDEX.get(n) : n - 1) - binderOffset(binderOf(n));
 
 // Position eines Slots: Binder, Seite, Reihe und Spalte (alles ab 1).
 function locate(n) {
-  const binder = binderOf(n);
-  const i = SPECIAL_INDEX.get(n) ?? n - 1 - binderOffset(binder);
+  const binder = binderOf(n), i = indexInBinder(n);
   const slot = i % LAYOUT.slotsPerPage;
   return { binder, page: Math.floor(i / LAYOUT.slotsPerPage) + 1, row: Math.floor(slot / LAYOUT.cols) + 1, col: (slot % LAYOUT.cols) + 1 };
 }
 // Reihenfolge über alle Binder (zum Sortieren nach Binderplatz)
-const slotOrder = n => { const { binder } = locate(n); return binder * 1e5 + (SPECIAL_INDEX.get(n) ?? n); };
+const slotOrder = n => binderOf(n) * 1e5 + indexInBinder(n);
 const pageNumbers = (binder, page) => range(LAYOUT.slotsPerPage, (page - 1) * LAYOUT.slotsPerPage).map(i => slotAt(binder, i));
 const pageCount = binder => Math.max(1, Math.ceil(binderSize(binder) / LAYOUT.slotsPerPage));
 

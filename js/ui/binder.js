@@ -83,9 +83,9 @@ function renderPage() {
   if (anyFilter()) return renderMatches();
   const numbers = pageNumbers(view.binder, view.page), [a, b] = pageEnds(numbers);
   $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
-  // „#0001 bis #0016“, in Binder 3 mit Namen: „Sonderkarten: Alola-Rattfratz bis Alola-Sleimok“
+  // „#0001 bis #0016“, ab Binder 3 mit Namen: „Sonderkarten: Alola-Rattfratz bis Alola-Sleimok“
   $("#pageRange").textContent = BY_N.get(a)?.special
-    ? `${t("specials")}: ${t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })}`
+    ? `${t(isTrainerBinder(view.binder) ? "trainers" : "specials")}: ${t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })}`
     : t("range", { a: pad(a), b: pad(b) });
   $("#pageProgress").textContent =
     t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: slotsInBinder(view.binder).length });
@@ -168,7 +168,12 @@ function goTo(n) {
   el?.classList.add("flash");
 }
 
+// Reiter für alle Binder (ab Binder 4 so viele, wie die Trainerkarten brauchen).
+const binderTip = b => (b === SPECIAL_BINDER ? t("specialsTip") : isTrainerBinder(b) ? t("trainersTip") : "");
+const binderTabsHtml = () => BINDERS.map(b => `<button class="tab" data-binder="${b}" role="tab" title="${esc(binderTip(b))}">Binder ${b}</button>`).join("");
+
 function bindBinderEvents() {
+  $("#binderBar .tabs").innerHTML = binderTabsHtml();
   onEach(".tab", b => { Object.assign(view, { binder: +b.dataset.binder, page: 1 }); render(); });
   onEach(".view", b => { view.mode = b.dataset.view; render(); });
   on("#filter", "change", e => { view.filter = e.target.value; render(); });

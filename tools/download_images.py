@@ -1,7 +1,7 @@
 """Lädt die Kartenbilder nach images/, damit die App sie ohne Internet zeigt.
 
 Aufruf (Python 3, Internet nötig):
-  python tools/download_images.py                     alle Karten (~17.400 Bilder)
+  python tools/download_images.py                     alle Karten (~20.700 Bilder, mit Trainern)
   python tools/download_images.py binder-backup.json  nur Karten aus einem Backup
 
 Bereits vorhandene Bilder werden übersprungen, ein Abbruch ist also kein Problem.
@@ -21,7 +21,7 @@ def image_jobs():
     data = read_js_vars("cards.js")
     sets = data["TCG_SETS"]
     jobs = {}
-    for cards in data["TCG_CARDS"].values():
+    for cards in [*data["TCG_CARDS"].values(), data.get("TCG_TRAINERS", [])]:
         for set_idx, num, _cat, _name, _rarity, *img in cards:
             set_id = sets[set_idx][0]
             path = img[0] if img and img[0] else f"{set_id}/{num}.png"

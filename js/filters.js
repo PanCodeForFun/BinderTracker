@@ -20,12 +20,13 @@ const rarerExists = (n, e) => cardsFor(n).some(c => RARITY[c.cat].tierRank > RAR
 const FILTERS = [
   { id: "gen", label: "fGen",
     options: () => [...new Set(DEX.map(p => p.gen))].map(g => [String(g), t("genN", { n: g })]),
-    value: p => String(p.gen) },
+    value: p => (p.gen ? String(p.gen) : null) },
   { id: "type", label: "fType", options: typeOptions, value: p => p.types[0] },
-  { id: "type2", label: "fType2", options: () => [...typeOptions(), ["none", t("fNone")]], value: p => p.types[1] || "none" },
+  { id: "type2", label: "fType2", options: () => [...typeOptions(), ["none", t("fNone")]], value: p => (p.types.length ? p.types[1] || "none" : null) },
   { id: "special", label: "fSpecial",  // Art der Sonderkarte (Binder 3)
     options: () => [...FORM_REGIONS.map(r => [r.id, localName(r.de, r.en)]), ["tagteam", "Tag Team"], ["", t("fNone")]], value: p => p.special || "" },
-  { id: "kind", label: "fKind", options: () => [...KINDS.map(k => [k.id, localName(k.de, k.en)]), ["", t("fNone")]], value: p => p.kind },
+  { id: "trainer", label: "fTrainer", options: () => TRAINER_TYPES.map(x => [x.id, localName(x.de, x.en)]), value: p => p.trainerType ?? null },
+  { id: "kind", label: "fKind", options: () => [...KINDS.map(k => [k.id, localName(k.de, k.en)]), ["", t("fNone")]], value: p => (p.trainerType ? null : p.kind) },
   { id: "tier", label: "fTier", options: () => TIERS.map(x => [x.id, x.label, x.color]), value: (p, e) => e && RARITY[e.r].tier },
   { id: "series", label: "fSeries", options: () => SERIES.map(s => [s, localName(SERIES_DE[s], s)]), value: (p, e, card) => card && SETS[card.setIdx].series },
   { id: "set", label: "fSet",  // nur Sets, aus denen du schon eine Karte eingetragen hast
