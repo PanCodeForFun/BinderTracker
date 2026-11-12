@@ -27,11 +27,14 @@ LANG_DE, LANG_EN = "6", "9"
 # Besondere Pokémon, die die PokeAPI nicht als Merkmal führt (Dex-Nummern)
 ULTRA_BEASTS = [*range(793, 800), *range(803, 807)]
 PARADOX = [*range(984, 996), 1005, 1006, 1009, 1010, *range(1020, 1024)]
-# Formen mit eigenem Slot im Formen-Anhang (FORM_REGIONS in js/config.js), in dieser Reihenfolge.
+# Formen mit eigenem Zweitslot in Binder 3 (FORM_REGIONS in js/config.js), in dieser Reihenfolge.
 # Slot-Nummer = Code * 10000 + Dex-Nummer, z. B. 10026 = Alola-Raichu. Nie ändern, die Sammlung speichert sie.
 FORM_CODES = {"alola": 1, "galar": 2, "hisui": 3, "paldea": 4, "mega": 5, "primal": 6}
 # Sonderformen, die keinen eigenen Slot bekommen (PokeAPI-Bezeichner enthält eines dieser Wörter)
 FORM_SKIP = {"totem", "cap"}
+# TCGdex-Sets, aus denen fehlende Promokarten ergänzt werden (TCG Pocket ist nur digital)
+PROMO_SET = re.compile(r"Promo")
+PROMO_SKIP_SERIES = {"Pokémon TCG Pocket"}
 
 # Original-Seltenheit der Karte -> Kategorie (RARITIES[].id in js/config.js)
 CATEGORY = {
@@ -160,16 +163,65 @@ def tcgdex_sets(sets):
         names, _, folder = found[tid]
         cards = {key(f.stem): (f.stem, ts_names(f.read_text(encoding="utf-8")).get("de", "")) for f in folder.glob("*.ts")}
         result[s["id"]] = (tid, names.get("de", ""), cards)
-    return result, key
+    return result, key, found
+
+
+def ts_value(text, field):
+    m = re.search(rf"""^\s*{field}:\s*["']([^"']*)["']""", text, re.M)
+    return m[1] if m else ""
+
+
+def add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, rarity_names, artists, key, max_n):
+    """Promokarten, die pokemon-tcg-data nicht kennt, aus TCGdex ergänzen: fehlende Karten in bekannten
+    Promo-Sets (z. B. SVP) und ganze Promo-Sets (z. B. MEP). Bild online von TCGdex (englisch)."""
+    known_sets = {tid: i for i, (tid, _, _) in enumerate(german) if tid}
+    ids = {row[0] for row in set_rows}
+    if "Promo" not in rarity_names:
+        rarity_names.append("Promo")
+    added = 0
+    for tid, (names, date, folder) in sorted(found.items(), key=lambda x: x[1][1]):
+        if not PROMO_SET.search(names.get("en", "")) or folder.parent.name in PROMO_SKIP_SERIES:
+            continue
+        set_text = folder.with_suffix(".ts").read_text(encoding="utf-8")
+        serie_file = re.search(r"import serie from '\.\./(.+?)'", set_text)
+        serie_text = (folder.parent.parent / f"{serie_file[1]}.ts").read_text(encoding="utf-8") if serie_file else ""
+        serie_id, serie_en = ts_value(serie_text, "id"), ts_names(serie_text).get("en", folder.parent.name)
+        files = sorted(folder.glob("*.ts"))
+        if tid in known_sets:
+            set_idx = known_sets[tid]
+            have = {key(c["number"]) for c in set_cards[set_idx]}
+        else:
+            set_idx = len(set_rows)
+            set_id = tid if tid not in ids else f"tcgdex-{tid}"
+            set_rows.append([set_id, names.get("en", tid), serie_en, date, len(files), names.get("de", ""), tid])
+            have = set()
+        for f in files:
+            text = f.read_text(encoding="utf-8")
+            dex = re.search(r"dexId:\s*\[([\d,\s]+)\]", text)
+            if key(f.stem) in have or ts_value(text, "category") != "Pokemon" or not dex:
+                continue
+            card_names = ts_names(text)
+            artist = ts_value(text, "illustrator")
+            if artist not in artists:
+                artists.append(artist)
+            num = re.sub(r"^0+(?=\d)", "", f.stem) if tid in known_sets else f.stem
+            img = f"https://assets.tcgdex.net/en/{serie_id}/{tid}/{f.stem}/low.webp"
+            entry = [set_idx, num, "promo", card_names.get("en", ""), rarity_names.index("Promo"), img,
+                     card_names.get("de", ""), f.stem, artists.index(artist)]
+            for n in map(int, re.findall(r"\d+", dex[1])):
+                if 1 <= n <= max_n:
+                    by_dex.setdefault(n, []).append(entry)
+            added += 1
+    print(f"{added} Promokarten aus TCGdex ergänzt.")
 
 
 def build_cards(max_n):
     sets = sorted(json.loads(get(f"{TCG}/sets/en.json")), key=lambda s: (s["releaseDate"], s["id"]))
     with ThreadPoolExecutor(16) as pool:
-        set_cards = pool.map(lambda s: json.loads(get(f"{TCG}/cards/en/{s['id']}.json")), sets)
+        set_cards = list(pool.map(lambda s: json.loads(get(f"{TCG}/cards/en/{s['id']}.json")), sets))
 
     update_tcgdex()
-    german, key = tcgdex_sets(sets)
+    german, key, found = tcgdex_sets(sets)
     german = [german.get(s["id"], ("", "", {})) for s in sets]
     rarity_names, artists, by_dex = [], [], {}
     for set_idx, (s, cards) in enumerate(zip(sets, set_cards)):
@@ -191,13 +243,22 @@ def build_cards(max_n):
                 if 1 <= n <= max_n:
                     by_dex.setdefault(n, []).append(entry)
 
+    set_rows = [[s["id"], s["name"], s["series"], s["releaseDate"][:7].replace("/", "-"), s.get("printedTotal", s["total"]),
+                 de_set, tcgdex_id] for s, (tcgdex_id, de_set, _) in zip(sets, german)]
+    add_tcgdex_promos(found, german, set_cards, set_rows, by_dex, rarity_names, artists, key, max_n)
+    # Sets nach Erscheinung (die App sortiert über den Set-Index), Karten auf die neuen Indizes umstellen
+    order = sorted(range(len(set_rows)), key=lambda i: set_rows[i][3])
+    new_idx = {old: new for new, old in enumerate(order)}
+    set_rows = [set_rows[i] for i in order]
+    for entry in {id(e): e for cards in by_dex.values() for e in cards}.values():
+        entry[0] = new_idx[entry[0]]
+
     write_js(
         "cards.js",
         "Kartendaten (PokemonTCG/pokemon-tcg-data, deutsche Namen von TCGdex). "
         "TCG_SETS: [id, Name, Serie, Erscheinung, Kartenanzahl, deutscher Name, TCGdex-ID]; "
         "TCG_CARDS[Dex]: [Set-Index, Nummer, Kategorie, Name, Seltenheit-Index, Bildpfad falls abweichend, deutscher Name, TCGdex-Nummer, Illustrator-Index]",
-        TCG_SETS=[[s["id"], s["name"], s["series"], s["releaseDate"][:7].replace("/", "-"), s.get("printedTotal", s["total"]),
-                   de_set, tcgdex_id] for s, (tcgdex_id, de_set, _) in zip(sets, german)],
+        TCG_SETS=set_rows,
         TCG_RARITY_NAMES=rarity_names,
         TCG_CARDS=dict(sorted(by_dex.items())),
         TCG_ARTISTS=artists,

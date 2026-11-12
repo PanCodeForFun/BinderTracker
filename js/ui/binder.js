@@ -15,7 +15,7 @@ function slotHtml(n) {
   const up = wantsUpgrade(e) ? ` <span class="up-tag" title="${t("upTag")}">↑</span>` : "";
   const sub = card ? `${card.set} · ${card.num}` : p.alt !== p.name ? p.alt : "";
 
-  return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}${p.form ? " form" : ""}" data-n="${n}" ${colorStyle(r)}>
+  return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}${p.special ? " special" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
     <div class="de">${esc(p.name)}${tag}${up}</div>
@@ -83,9 +83,9 @@ function renderPage() {
   if (anyFilter()) return renderMatches();
   const numbers = pageNumbers(view.binder, view.page), [a, b] = pageEnds(numbers);
   $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
-  // „#0001 bis #0016“, auf Formen-Seiten mit Namen: „Formen: Alola-Rattfratz bis Alola-Knogga“
-  $("#pageRange").textContent = BY_N.get(a)?.form
-    ? `${t("forms")}: ${t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })}`
+  // „#0001 bis #0016“, in Binder 3 mit Namen: „Sonderkarten: Alola-Rattfratz bis Alola-Sleimok“
+  $("#pageRange").textContent = BY_N.get(a)?.special
+    ? `${t("specials")}: ${t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })}`
     : t("range", { a: pad(a), b: pad(b) });
   $("#pageProgress").textContent =
     t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: slotsInBinder(view.binder).length });
@@ -139,17 +139,18 @@ function renderBinderBar() {
   // Trefferansicht (Seite mit Filter): Binder-Reiter und Blättern gelten dort nicht
   const results = view.mode === "page" && anyFilter();
   $("#binderBar .tabs").hidden = $(".pager").hidden = results;
-  $("#prev").disabled = view.binder === 1 && view.page === 1;
-  $("#next").disabled = view.binder === 2 && view.page === pages;
+  $("#prev").disabled = view.binder === BINDERS[0] && view.page === 1;
+  $("#next").disabled = view.binder === BINDERS[BINDERS.length - 1] && view.page === pages;
 }
 
-// Blättern über die Bindergrenze hinweg: hinter der letzten Seite von Binder 1 kommt Binder 2.
+// Blättern über die Bindergrenze hinweg: hinter der letzten Seite von Binder 1 kommt Binder 2 usw.
 function turnPage(delta) {
   if (view.mode === "page" && anyFilter()) return;
   let { binder, page } = view;
+  const prev = BINDERS[BINDERS.indexOf(binder) - 1], next = BINDERS[BINDERS.indexOf(binder) + 1];
   page += delta;
-  if (page < 1) [binder, page] = binder === 2 ? [1, pageCount(1)] : [1, 1];
-  else if (page > pageCount(binder)) [binder, page] = binder === 1 ? [2, 1] : [2, pageCount(2)];
+  if (page < 1) [binder, page] = prev ? [prev, pageCount(prev)] : [binder, 1];
+  else if (page > pageCount(binder)) [binder, page] = next ? [next, 1] : [binder, pageCount(binder)];
   Object.assign(view, { binder, page });
   render();
 }

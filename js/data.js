@@ -7,26 +7,57 @@ const DEX = POKEDEX.map(([n, de, en, gen, types = [], kind = ""]) => ({ n, de, e
 const DEX_BY_N = new Map(DEX.map(p => [p.n, p]));
 const MAX_N = DEX[DEX.length - 1].n;
 
-// ---------- Formen (Regionalformen, Megas) ----------
-// Eigene Slots mit eigener Nummer (data/forms.js, z. B. 10026 = Alola-Raichu), nur mit Formen-Anhang.
-// Ohne Anhang liegen ihre Karten wie gewohnt beim normalen Pokémon. base = Dex-Nummer der Grundform.
-const FORM_MODE = readJson(FORMS_KEY, true) !== false;
-const ALL_FORMS = (window.FORMS || []).filter(([, base, region]) => DEX_BY_N.has(base) && FORM_REGION[region]).map(([n, base, region, types]) => {
+// ---------- Sonderkarten (Binder 3) ----------
+// Regionalformen, Megas, Proto-Formen (data/forms.js) und Tag Teams haben dort einen Zweitslot mit
+// eigener Nummer (z. B. 10026 = Alola-Raichu). Ihre Karten bleiben auch beim normalen Pokémon wählbar.
+// special = Art (FORM_REGIONS[].id oder "tagteam"), base = Dex-Nummer für die Anzeige, members = Dex-Nummern.
+const named = (p, de, en) => ({ ...p, de, en, name: localName(de, en), alt: LANG === "en" ? de : en });
+const FORMS_3 = (window.FORMS || []).filter(([, base, region]) => DEX_BY_N.has(base) && FORM_REGION[region]).map(([n, base, region, types]) => {
   const b = DEX_BY_N.get(base), r = FORM_REGION[region];
-  const de = `${r.de}-${b.de}`, en = `${r.en} ${b.en}`;
-  return { ...b, n, base, form: region, types, de, en, name: localName(de, en), alt: LANG === "en" ? de : en };
+  return named({ ...b, n, base, members: [base], special: region, types }, `${r.de}-${b.de}`, `${r.en} ${b.en}`);
 });
-const FORM_BY_N = new Map(ALL_FORMS.map(f => [f.n, f]));
-const FORM_LIST = FORM_MODE ? ALL_FORMS : [];
-const FORMS_OF = groupBy(FORM_LIST, f => f.base);  // Dex-Nummer -> ihre Formen
 
-// Alle Slots im Binder (Pokédex, dahinter die Formen) und alle Nummern, die gespeichert sein dürfen.
-const SLOTS = [...DEX, ...FORM_LIST];
+// Tag Teams aus den Kartendaten: ein Slot pro Team („Pikachu & Zekrom“), egal ob GX oder LEGEND.
+const tagTeamOf = nameEn => (nameEn.includes(" & ") ? nameEn.replace(/[- ](GX|LEGEND)$/, "") : null);
+function buildTagTeams() {
+  const teams = new Map();
+  for (const [n, cards] of Object.entries(TCG_CARDS)) for (const c of cards) {
+    const en = tagTeamOf(c[3]);
+    if (!en) continue;
+    const team = teams.get(en) || { en, de: "", members: [] };
+    if (!team.members.includes(+n)) team.members.push(+n);
+    team.de ||= (c[6] || "").replace(/[- ](GX|LEGENDE?)$/i, "");
+    teams.set(en, team);
+  }
+  // Nummer aus dem englischen Namen (bleibt gleich, auch wenn neue Teams dazukommen)
+  const used = new Set();
+  const idOf = en => {
+    let h = 0;
+    for (const ch of en) h = (h * 31 + ch.codePointAt(0)) % 1000000;
+    while (used.has(h)) h = (h + 1) % 1000000;
+    used.add(h);
+    return 7000000 + h;
+  };
+  return [...teams.values()]
+    .map(team => ({ ...team, members: team.members.sort((a, b) => a - b) }))
+    .sort((a, b) => a.members[0] - b.members[0] || a.en.localeCompare(b.en))
+    .map(({ en, de, members }) => {
+      const b = DEX_BY_N.get(members[0]);
+      return named({ ...b, n: idOf(en), base: members[0], members, special: "tagteam", kind: "",
+        gen: Math.max(...members.map(m => DEX_BY_N.get(m).gen)) }, de || en, en);
+    });
+}
+const SPECIALS = [...FORMS_3, ...buildTagTeams()];
+const SPECIAL_BY_N = new Map(SPECIALS.map(p => [p.n, p]));
+const SPECIALS_OF = new Map();  // Dex-Nummer -> ihre Sonderkarten-Slots (für die Suche)
+for (const p of SPECIALS) for (const m of p.members) SPECIALS_OF.set(m, [...(SPECIALS_OF.get(m) || []), p]);
+
+// Alle Slots (Pokédex, dann Sonderkarten), nach Nummer abrufbar.
+const SLOTS = [...DEX, ...SPECIALS];
 const BY_N = new Map(SLOTS.map(p => [p.n, p]));
-const KNOWN_N = new Set([...DEX_BY_N.keys(), ...FORM_BY_N.keys()]);
 
-// Formen zeigen die Nummer ihrer Grundform.
-const baseOf = n => FORM_BY_N.get(n)?.base ?? n;
+// Sonderkarten zeigen die Nummer ihres (ersten) Pokémon.
+const baseOf = n => SPECIAL_BY_N.get(n)?.base ?? n;
 const pad = n => "#" + String(baseOf(n)).padStart(4, "0");
 const spriteUrl = n => SPRITES[n] || window.FORM_SPRITES?.[n] || SPRITES[baseOf(n)] || "";
 
@@ -81,20 +112,14 @@ function decodeCard([setIdx, num, cat, nameEn, rarityIdx, img, nameDe, deNum, ar
   };
 }
 
-// Formkarte? Name wie FORM_REGIONS[].card, aber kein Tag Team („&“).
-const isFormCard = (form, nameEn) => FORM_REGION[form.form].card.test(nameEn) && !nameEn.includes(" & ");
-// Rohdaten der Karten eines Slots: bei einer Form ihre Karten aus denen der Grundform,
-// sonst alle Karten außer denen, die einen eigenen Formen-Slot haben.
+// Karte einer Form? Name wie FORM_REGIONS[].card, aber kein Tag Team („&“).
+const isFormCard = (region, nameEn) => FORM_REGION[region].card.test(nameEn) && !nameEn.includes(" & ");
+// Rohdaten der Karten eines Slots. Sonderkarten nehmen ihre Karten aus denen ihres Pokémon.
 function rawCardsFor(n) {
-  const form = FORM_BY_N.get(n);
-  if (form) return (TCG_CARDS[form.base] || []).filter(c => isFormCard(form, c[3]));
-  const forms = FORMS_OF.get(n) || [];
-  return (TCG_CARDS[n] || []).filter(c => !forms.some(f => isFormCard(f, c[3])));
-}
-// Formen-Slot, in den die Karte gehört (nur mit Formen-Anhang), sonst nichts.
-function formSlotOf(n, cardId) {
-  const raw = (TCG_CARDS[n] || []).find(c => `${SETS[c[0]].id}-${c[1]}` === cardId);
-  return raw && (FORMS_OF.get(n) || []).find(f => isFormCard(f, raw[3]))?.n;
+  const sp = SPECIAL_BY_N.get(n);
+  if (!sp) return TCG_CARDS[n] || [];
+  const cards = TCG_CARDS[sp.base] || [];
+  return sp.special === "tagteam" ? cards.filter(c => tagTeamOf(c[3]) === sp.en) : cards.filter(c => isFormCard(sp.special, c[3]));
 }
 
 // Alle Karten eines Slots, nach Stufe und dann Erscheinungsdatum.
@@ -142,31 +167,31 @@ function searchCards(query) {
 }
 
 // ---------- Binder ----------
-// Alle Slots hintereinander, Index 0 = #1. Der Formen-Anhang beginnt auf der ersten neuen Seite
-// hinter dem Pokédex. Kommen neue Pokémon dazu, rutscht er seitenweise nach hinten.
-const FORM_START = Math.ceil(MAX_N / LAYOUT.slotsPerPage) * LAYOUT.slotsPerPage;
-const FORM_INDEX = new Map(FORM_LIST.map((f, i) => [f.n, FORM_START + i]));
-const SLOT_TOTAL = FORM_LIST.length ? FORM_START + FORM_LIST.length : MAX_N;
-const slotIndex = n => FORM_INDEX.get(n) ?? n - 1;
-// Nummer am Index i: Dex-Nummer (dahinter frei für neue Pokémon), Form oder null (leer).
-const slotAt = i => (i < FORM_START ? i + 1 : FORM_LIST[i - FORM_START]?.n ?? null);
-
+// Binder 1: #1 bis #640, Binder 2: ab #641 (wächst mit neuen Pokémon, dahinter frei),
+// Binder 3: Sonderkarten (Zweitslots, siehe oben).
+const BINDERS = [1, 2, 3];
+const SPECIAL_BINDER = 3;
+const SPECIAL_INDEX = new Map(SPECIALS.map((p, i) => [p.n, i]));
 const binderOffset = binder => (binder === 2 ? LAYOUT.binder1Size : 0);
-const binderOf = n => (slotIndex(n) < LAYOUT.binder1Size ? 1 : 2);
+const binderOf = n => (SPECIAL_INDEX.has(n) ? SPECIAL_BINDER : n <= LAYOUT.binder1Size ? 1 : 2);
 const inBinder = (binder, n) => binderOf(n) === binder;
 const slotsInBinder = binder => SLOTS.filter(p => inBinder(binder, p.n));
+const binderSize = binder =>
+  binder === SPECIAL_BINDER ? SPECIALS.length : binder === 1 ? Math.min(MAX_N, LAYOUT.binder1Size) : MAX_N - LAYOUT.binder1Size;
+// Nummer am Platz i (ab 0) eines Binders: Dex-Nummer (hinter dem Pokédex frei für neue Pokémon), Sonderkarte oder null (leer).
+const slotAt = (binder, i) => (binder === SPECIAL_BINDER ? SPECIALS[i]?.n ?? null : binderOffset(binder) + i + 1);
 
 // Position eines Slots: Binder, Seite, Reihe und Spalte (alles ab 1).
 function locate(n) {
   const binder = binderOf(n);
-  const i = slotIndex(n) - binderOffset(binder);
+  const i = SPECIAL_INDEX.get(n) ?? n - 1 - binderOffset(binder);
   const slot = i % LAYOUT.slotsPerPage;
   return { binder, page: Math.floor(i / LAYOUT.slotsPerPage) + 1, row: Math.floor(slot / LAYOUT.cols) + 1, col: (slot % LAYOUT.cols) + 1 };
 }
-const firstOnPage = (binder, page) => binderOffset(binder) + (page - 1) * LAYOUT.slotsPerPage;  // Index
-const pageNumbers = (binder, page) => range(LAYOUT.slotsPerPage, firstOnPage(binder, page)).map(slotAt);
-const pageCount = binder => Math.max(1, Math.ceil(
-  (binder === 1 ? Math.min(SLOT_TOTAL, LAYOUT.binder1Size) : SLOT_TOTAL - LAYOUT.binder1Size) / LAYOUT.slotsPerPage));
+// Reihenfolge über alle Binder (zum Sortieren nach Binderplatz)
+const slotOrder = n => { const { binder } = locate(n); return binder * 1e5 + (SPECIAL_INDEX.get(n) ?? n); };
+const pageNumbers = (binder, page) => range(LAYOUT.slotsPerPage, (page - 1) * LAYOUT.slotsPerPage).map(i => slotAt(binder, i));
+const pageCount = binder => Math.max(1, Math.ceil(binderSize(binder) / LAYOUT.slotsPerPage));
 
 const slotText = ({ row, col }) => `${t("rows")[row - 1]} ${t("cols")[col - 1]}`;
 // "B1 · S. 3 · oben links"
@@ -177,10 +202,10 @@ const norm = s => s.toLowerCase().replace(/♀/g, "w").replace(/♂/g, "m")
   .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss").replace(/[^a-z0-9]/g, "");
 const SEARCH_INDEX = SLOTS.map(p => ({ p, keys: [norm(p.de), norm(p.en)] }));
 
-// Treffer nach Güte: exakt, Anfang, irgendwo. Zahlen suchen die Dex-Nummer (mit ihren Formen).
+// Treffer nach Güte: exakt, Anfang, irgendwo. Zahlen suchen die Dex-Nummer (mit ihren Sonderkarten).
 function search(query, limit = 12) {
   const q = query.trim().replace(/^#/, "");
-  if (/^\d+$/.test(q)) return DEX_BY_N.has(+q) ? [DEX_BY_N.get(+q), ...(FORMS_OF.get(+q) || [])] : [];
+  if (/^\d+$/.test(q)) return DEX_BY_N.has(+q) ? [DEX_BY_N.get(+q), ...(SPECIALS_OF.get(+q) || [])] : [];
   const k = norm(q);
   if (!k) return [];
   const score = keys => keys.includes(k) ? 0 : keys.some(x => x.startsWith(k)) ? 1 : keys.some(x => x.includes(k)) ? 2 : -1;

@@ -12,7 +12,6 @@ const WISH_KEY = STORAGE_KEY + ".wunsch";    // Wunschliste
 const PRICE_KEY = STORAGE_KEY + ".preise";   // zwischengespeicherte Kartenpreise
 const LANG_KEY = "pokebinder.lang";          // Sprache der Oberfläche
 const FILTER_KEY = STORAGE_KEY + ".filter"; // gewählte Binder-Filter
-const FORMS_KEY = STORAGE_KEY + ".formen";   // Formen-Anhang an/aus
 const DB_COLLECTION = "karten";
 const DB_WISH = "wunsch";
 
@@ -54,8 +53,8 @@ const SERIES_DE = {
   "Mega Evolution": "Mega-Entwicklung",
 };
 
-// Formen-Anhang: Regionalformen und Megas bekommen eigene Slots hinter dem Pokédex in Binder 2
-// (Schalter in den Optionen). Die Formen selbst stehen in data/forms.js, in dieser Reihenfolge.
+// Sonderkarten (Binder 3): Regionalformen, Megas und Proto-Formen bekommen dort einen Zweitslot,
+// in dieser Reihenfolge (die Formen selbst stehen in data/forms.js), danach die Tag Teams.
 // de/en: Namensteil („Alola-Raichu“, „Alolan Raichu“), card: so beginnt der englische Kartenname.
 // Karten mit „&“ (Tag Team) bleiben beim normalen Pokémon.
 const FORM_REGIONS = [
