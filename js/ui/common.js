@@ -6,7 +6,13 @@
 const view = { binder: 1, page: 1, mode: "page", filter: "all", filters: readJson(FILTER_KEY, {}) };
 
 const colorStyle = r => (r ? `style="--r:${r.color};--rInk:${r.ink}"` : "");
-const spriteImg = n => `<img class="spr" src="${spriteUrl(n)}" alt="">`;
+// Bild des Pokémon, bei Tag Teams alle Mitglieder nebeneinander.
+const spriteImg = n => {
+  const members = SPECIAL_BY_N.get(n)?.special === "tagteam" ? SPECIAL_BY_N.get(n).members : [];
+  return members.length > 1
+    ? `<span class="spr-team">${members.map(m => `<img class="spr" src="${spriteUrl(m)}" alt="">`).join("")}</span>`
+    : `<img class="spr" src="${spriteUrl(n)}" alt="">`;
+};
 
 // ---------- Hinweise und Status ----------
 function toast(msg) {

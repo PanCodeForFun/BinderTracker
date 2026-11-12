@@ -2,6 +2,7 @@
 
 // ---------- Slot ----------
 function slotHtml(n) {
+  if (n == null) return `<div class="slot future"></div>`;  // hinter der letzten Form
   const p = BY_N.get(n), loc = locate(n);
   const corner = `<span class="pos">${loc.row}/${loc.col}</span><span class="num">${pad(n)}</span>`;
   if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
@@ -14,7 +15,7 @@ function slotHtml(n) {
   const up = wantsUpgrade(e) ? ` <span class="up-tag" title="${t("upTag")}">↑</span>` : "";
   const sub = card ? `${card.set} · ${card.num}` : p.alt !== p.name ? p.alt : "";
 
-  return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}" data-n="${n}" ${colorStyle(r)}>
+  return `<div class="slot${e ? " have" : ""}${dim ? " dim" : ""}${p.special ? " special" : ""}" data-n="${n}" ${colorStyle(r)}>
     ${corner}
     <div class="vis">${visual}</div>
     <div class="de">${esc(p.name)}${tag}${up}</div>
@@ -80,19 +81,28 @@ async function slotMenuClick(el) {
 // ---------- Seite und Übersicht ----------
 function renderPage() {
   if (anyFilter()) return renderMatches();
-  const start = firstOnPage(view.binder, view.page);
+  const numbers = pageNumbers(view.binder, view.page), [a, b] = pageEnds(numbers);
   $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
-  $("#pageRange").textContent = t("range", { a: pad(start), b: pad(Math.min(start + LAYOUT.slotsPerPage - 1, Math.max(start, MAX_N))) });
+  // „#0001 bis #0016“, in Binder 3 mit Namen: „Sonderkarten: Alola-Rattfratz bis Alola-Sleimok“
+  $("#pageRange").textContent = BY_N.get(a)?.special
+    ? `${t("specials")}: ${t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })}`
+    : t("range", { a: pad(a), b: pad(b) });
   $("#pageProgress").textContent =
-    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: dexInBinder(view.binder).length });
-  $("#grid").innerHTML = pageNumbers(view.binder, view.page).map(slotHtml).join("");
+    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: slotsInBinder(view.binder).length });
+  $("#grid").innerHTML = numbers.map(slotHtml).join("");
+}
+
+// Erster und letzter belegter Slot einer Seite (freie Plätze hinter dem Pokédex zählen nicht mit).
+function pageEnds(numbers) {
+  const real = numbers.filter(n => BY_N.has(n));
+  return real.length ? [real[0], real[real.length - 1]] : [numbers[0], numbers[0]];
 }
 
 // Mit Filter: nur die passenden Pokémon aus beiden Bindern, nach Binderseite gruppiert.
 // Seiten ohne Treffer fallen weg, so findet man die Treffer ohne Blättern.
 function renderMatches() {
   const active = activeFilters();
-  const hits = DEX.filter(p => matches(p.n, active)).map(p => p.n);
+  const hits = SLOTS.filter(p => matches(p.n, active)).map(p => p.n);
   const pages = groupBy(hits, n => { const { binder, page } = locate(n); return t("pageTitle", { b: binder, p: page }); });
   $("#pageTitle").textContent = t("fResults");
   $("#pageRange").textContent = t("fResultsCount", { n: hits.length, p: pages.size });
@@ -129,17 +139,18 @@ function renderBinderBar() {
   // Trefferansicht (Seite mit Filter): Binder-Reiter und Blättern gelten dort nicht
   const results = view.mode === "page" && anyFilter();
   $("#binderBar .tabs").hidden = $(".pager").hidden = results;
-  $("#prev").disabled = view.binder === 1 && view.page === 1;
-  $("#next").disabled = view.binder === 2 && view.page === pages;
+  $("#prev").disabled = view.binder === BINDERS[0] && view.page === 1;
+  $("#next").disabled = view.binder === BINDERS[BINDERS.length - 1] && view.page === pages;
 }
 
-// Blättern über die Bindergrenze hinweg: hinter der letzten Seite von Binder 1 kommt Binder 2.
+// Blättern über die Bindergrenze hinweg: hinter der letzten Seite von Binder 1 kommt Binder 2 usw.
 function turnPage(delta) {
   if (view.mode === "page" && anyFilter()) return;
   let { binder, page } = view;
+  const prev = BINDERS[BINDERS.indexOf(binder) - 1], next = BINDERS[BINDERS.indexOf(binder) + 1];
   page += delta;
-  if (page < 1) [binder, page] = binder === 2 ? [1, pageCount(1)] : [1, 1];
-  else if (page > pageCount(binder)) [binder, page] = binder === 1 ? [2, 1] : [2, pageCount(2)];
+  if (page < 1) [binder, page] = prev ? [prev, pageCount(prev)] : [binder, 1];
+  else if (page > pageCount(binder)) [binder, page] = next ? [next, 1] : [binder, pageCount(binder)];
   Object.assign(view, { binder, page });
   render();
 }

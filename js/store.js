@@ -10,9 +10,12 @@ let collection = {};
 const collectionDocs = new LiveDocs(DB_COLLECTION);
 
 const owned = n => collection[n];
-const ownedCount = predicate => DEX.filter(p => collection[p.n] && predicate(p)).length;
+const ownedCount = predicate => SLOTS.filter(p => collection[p.n] && predicate(p)).length;
+// Einträge aller Slots (ohne ungültige Nummern).
+const activeEntries = () => SLOTS.map(p => collection[p.n]).filter(Boolean);
 // Eingetragene Karten mit gewähltem Design: { n, e (Eintrag), c (Karte) }.
 const ownedCards = () => Object.entries(collection)
+  .filter(([n]) => BY_N.has(+n))
   .map(([n, e]) => ({ n: +n, e, c: findCard(+n, e.card) }))
   .filter(x => x.c);
 const cardLang = e => e?.lang || DEFAULT_CARD_LANG;

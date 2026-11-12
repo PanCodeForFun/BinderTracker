@@ -35,9 +35,9 @@ function openSection(mode) {
 
 // ---------- Adresse: #b<Binder>-s<Seite><Endung> ----------
 function readHash() {
-  const m = location.hash.match(/^#b([12])-s(\d+)(-\w\w)?$/);
+  const m = location.hash.match(/^#b(\d)-s(\d+)(-\w\w)?$/);
   const mode = m && Object.keys(VIEWS).find(k => VIEWS[k].hash === (m[3] || ""));
-  if (mode) Object.assign(view, { binder: +m[1], page: +m[2], mode });
+  if (mode && BINDERS.includes(+m[1])) Object.assign(view, { binder: +m[1], page: +m[2], mode });
 }
 function writeHash() {
   const h = `#b${view.binder}-s${view.page}${VIEWS[view.mode].hash}`;

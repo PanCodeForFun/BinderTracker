@@ -53,6 +53,20 @@ const SERIES_DE = {
   "Mega Evolution": "Mega-Entwicklung",
 };
 
+// Sonderkarten (Binder 3): Regionalformen, Megas und Proto-Formen bekommen dort einen Zweitslot,
+// in dieser Reihenfolge (die Formen selbst stehen in data/forms.js), danach die Tag Teams.
+// de/en: Namensteil („Alola-Raichu“, „Alolan Raichu“), card: so beginnt der englische Kartenname.
+// Karten mit „&“ (Tag Team) bleiben beim normalen Pokémon.
+const FORM_REGIONS = [
+  { id: "alola",  de: "Alola",  en: "Alolan",   card: /^(Radiant )?Alolan / },
+  { id: "galar",  de: "Galar",  en: "Galarian", card: /^(Radiant )?Galarian / },
+  { id: "hisui",  de: "Hisui",  en: "Hisuian",  card: /^(Radiant )?Hisuian / },
+  { id: "paldea", de: "Paldea", en: "Paldean",  card: /^(Radiant )?Paldean / },
+  { id: "mega",   de: "Mega",   en: "Mega",     card: /^(M|Mega) / },
+  { id: "primal", de: "Proto",  en: "Primal",   card: /^Primal / },
+];
+const FORM_REGION = Object.fromEntries(FORM_REGIONS.map(r => [r.id, r]));
+
 // Besondere Pokémon (5. Feld in data/pokedex.js), Filter „Besonderheit“.
 const KINDS = [
   { id: "legendary", de: "Legendär",   en: "Legendary" },

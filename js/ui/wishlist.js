@@ -12,7 +12,7 @@ const rarer = (a, b) => RARITY[b.cat].rank - RARITY[a.cat].rank;
 const SORTS = {
   new: { label: "sortNew", cmp: (a, b) => b.setIdx - a.setIdx || rarer(a, b) || byCardNumber(a, b) },
   old: { label: "sortOld", cmp: (a, b) => a.setIdx - b.setIdx || rarer(a, b) || byCardNumber(a, b) },
-  dex: { label: "sortDex", cmp: (a, b) => a.ns[0] - b.ns[0] || b.setIdx - a.setIdx || byCardNumber(a, b) },
+  dex: { label: "sortDex", cmp: (a, b) => slotOrder(a.ns[0]) - slotOrder(b.ns[0]) || b.setIdx - a.setIdx || byCardNumber(a, b) },
   rarity: { label: "sortRarity", cmp: (a, b) => rarer(a, b) || b.setIdx - a.setIdx || byCardNumber(a, b) },
 };
 

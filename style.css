@@ -422,3 +422,5 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .match-head { grid-column: 1 / -1; margin: 8px 4px -4px; font-size: 14px; color: var(--muted); }
 .match-head:first-child { margin-top: 0; }
 .match-none { grid-column: 1 / -1; text-align: center; padding: 40px 0; }
+.spr-team { display: inline-flex; justify-content: center; }
+.spr-team .spr { width: 64px; height: 64px; margin: 0 -8px; }

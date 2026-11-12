@@ -12,12 +12,12 @@ const setCollectionBody = html => ($("#statsBody").innerHTML = html);
 
 // ---------- Statistik ----------
 function renderStats() {
-  const entries = Object.values(collection);
+  const entries = activeEntries();
   const counts = countBy(entries, e => RARITY[e.r].tier);
   const max = Math.max(1, ...Object.values(counts));
-  const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), dexInBinder(b).length);
+  const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), slotsInBinder(b).length);
   setCollectionBody(`
-    <div class="stat-tiles">${progressTile(t("total"), entries.length, DEX.length)}${binderTile(1)}${binderTile(2)}</div>
+    <div class="stat-tiles">${progressTile(t("total"), ownedCount(p => !p.special), DEX.length)}${BINDERS.map(binderTile).join("")}</div>
     <h3>${t("byRarity")}</h3>
     <div class="bars">${TIERS.map(tier => `
       <div class="barrow"><span class="bl"><i style="background:${tier.color}"></i>${esc(tier.label)}</span>
@@ -53,7 +53,7 @@ function renderValue() {
   const sum = list => list.reduce((s, x) => s + x.v, 0);
   const tile = (label, list) => statTile(list.length ? euro(sum(list)) : "–", label);
   const oldest = Math.min(...items.map(x => x.at).filter(Boolean));
-  const noDesign = Object.keys(collection).length - items.length;
+  const noDesign = activeEntries().length - items.length;
   const top = [...priced].sort((a, b) => b.v - a.v).slice(0, 10);
   const btn = valueRun.busy
     ? `<button class="ghost primary" disabled>${t("valueLoading", { a: valueRun.done, b: valueRun.total })}</button>
@@ -62,7 +62,7 @@ function renderValue() {
 
   setCollectionBody(`
     <div class="value-head"><p class="sub">${t("valueHint")}</p><div class="value-btn">${btn}</div></div>
-    <div class="stat-tiles">${tile(t("total"), priced)}${[1, 2].map(b => tile(`Binder ${b}`, priced.filter(x => inBinder(b, x.n)))).join("")}</div>
+    <div class="stat-tiles">${tile(t("total"), priced)}${BINDERS.map(b => tile(`Binder ${b}`, priced.filter(x => inBinder(b, x.n)))).join("")}</div>
     <p class="sub">${t("valueCount", { a: priced.length, b: items.length })}${isFinite(oldest) ? " " + t("valueAsOf", { d: new Date(oldest).toLocaleDateString(LANG) }) : ""}${
       noDesign ? " " + t("valueNoDesign", { n: noDesign }) : ""}</p>
     ${top.length ? `<h3>${t("valueTop")}</h3><ol class="top-cards">${top.map(x => `
@@ -77,9 +77,9 @@ function renderValue() {
 function upgradeRows() {
   const wished = new Map();
   for (const id of wishlist.keys()) for (const n of cardById(id)?.ns || []) wished.set(n, [...(wished.get(n) || []), cardById(id)]);
-  const rows = DEX.filter(p => owned(p.n)?.up || wished.has(p.n)).map(p => ({ p, e: owned(p.n), wishes: wished.get(p.n) || [] }));
+  const rows = SLOTS.filter(p => owned(p.n)?.up || wished.has(p.n)).map(p => ({ p, e: owned(p.n), wishes: wished.get(p.n) || [] }));
   const rank = row => (row.e ? RARITY[row.e.r].rank : -1);
-  if (coll.upSort === "common") rows.sort((a, b) => rank(a) - rank(b) || a.p.n - b.p.n);
+  if (coll.upSort === "common") rows.sort((a, b) => rank(a) - rank(b) || slotOrder(a.p.n) - slotOrder(b.p.n));
   return rows;
 }
 
