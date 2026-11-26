@@ -22,6 +22,7 @@ function pickSuggestion(i) {
   $("#suggest").hidden = true;
   $("#search").blur();
   goTo(p.n);
+  if (!isPlaced(p.n)) openPicker(p.n);  // Trainer noch nicht in Binder 4: gleich Karte wählen
 }
 
 function moveSuggestion(delta) {

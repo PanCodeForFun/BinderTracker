@@ -3,6 +3,7 @@
 // ---------- Slot ----------
 function slotHtml(n) {
   if (n == null) return `<div class="slot future"></div>`;  // hinter der letzten Form
+  if (n === ADD_SLOT) return addSlotHtml();
   const p = BY_N.get(n), loc = locate(n);
   const corner = `<span class="pos">${loc.row}/${loc.col}</span><span class="num">${pad(n)}</span>`;
   if (!p) return `<div class="slot future">${corner}<div class="free">${t("freeSlot")}</div></div>`;
@@ -26,6 +27,14 @@ function slotHtml(n) {
     </div>
   </div>`;
 }
+
+// Binder 4: Platz hinter der letzten Karte, öffnet die Suche nach Trainer-, Item- und Stadionkarten.
+const addSlotHtml = () => `<div class="slot add" data-add>
+    <div class="vis"><img class="spr" src="${TRAINER_ICON}" alt=""></div>
+    <div class="de">${t("addCard")}</div>
+    <div class="sub">${t("addSub")}</div>
+    <div class="slot-foot"><button class="rbtn">${t("addCard")}</button></div>
+  </div>`;
 
 // ---------- Menü „…“ am Slot: versteckte Zusatzfunktionen pro Karte ----------
 // Neue Funktion = neuer Eintrag: html(entry) zeichnet sie, click(element, entry) gibt den
@@ -82,13 +91,14 @@ async function slotMenuClick(el) {
 function renderPage() {
   if (anyFilter()) return renderMatches();
   const numbers = pageNumbers(view.binder, view.page), [a, b] = pageEnds(numbers);
-  $("#pageTitle").textContent = t("pageTitle", { b: view.binder, p: view.page });
-  // „#0001 bis #0016“, ab Binder 3 mit Namen: „Sonderkarten: Alola-Rattfratz bis Alola-Sleimok“
-  $("#pageRange").textContent = BY_N.get(a)?.special
-    ? `${t(isTrainerBinder(view.binder) ? "trainers" : "specials")}: ${t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })}`
+  const other = isOtherBinder(view.binder);
+  $("#pageTitle").textContent = t("pageTitle", { b: binderName(view.binder), p: view.page });
+  // „#0001 bis #0016“, Binder 3 mit Namen: „Alola-Rattfratz bis Alola-Sleimok“, Binder 4: Hinweis zur Reihenfolge
+  $("#pageRange").textContent = other ? t("otherRange")
+    : BY_N.get(a)?.special ? t("range", { a: BY_N.get(a).name, b: BY_N.get(b).name })
     : t("range", { a: pad(a), b: pad(b) });
-  $("#pageProgress").textContent =
-    t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: slotsInBinder(view.binder).length });
+  $("#pageProgress").textContent = other ? t("otherCount", { n: otherSlots().list.length })
+    : t("inBinder", { a: ownedCount(p => inBinder(view.binder, p.n)), b: slotsInBinder(view.binder).length });
   $("#grid").innerHTML = numbers.map(slotHtml).join("");
 }
 
@@ -102,8 +112,8 @@ function pageEnds(numbers) {
 // Seiten ohne Treffer fallen weg, so findet man die Treffer ohne Blättern.
 function renderMatches() {
   const active = activeFilters();
-  const hits = SLOTS.filter(p => matches(p.n, active)).map(p => p.n);
-  const pages = groupBy(hits, n => { const { binder, page } = locate(n); return t("pageTitle", { b: binder, p: page }); });
+  const hits = SLOTS.filter(p => isPlaced(p.n) && matches(p.n, active)).map(p => p.n);
+  const pages = groupBy(hits, n => { const { binder, page } = locate(n); return t("pageTitle", { b: binderName(binder), p: page }); });
   $("#pageTitle").textContent = t("fResults");
   $("#pageRange").textContent = t("fResultsCount", { n: hits.length, p: pages.size });
   $("#pageProgress").textContent = "";
@@ -163,14 +173,14 @@ function goTo(n) {
   Object.assign(view, { binder, page, mode: "page" });
   render();
   const el = slotEl(n);
-  if (!el) toast(t("fHidden"));
+  if (!el && isPlaced(n)) toast(t("fHidden"));  // nicht eingetragene Trainer haben keinen Platz
   el?.scrollIntoView({ block: "center", behavior: "smooth" });
   el?.classList.add("flash");
 }
 
-// Reiter für alle Binder (ab Binder 4 so viele, wie die Trainerkarten brauchen).
-const binderTip = b => (b === SPECIAL_BINDER ? t("specialsTip") : isTrainerBinder(b) ? t("trainersTip") : "");
-const binderTabsHtml = () => BINDERS.map(b => `<button class="tab" data-binder="${b}" role="tab" title="${esc(binderTip(b))}">Binder ${b}</button>`).join("");
+// Reiter für alle Binder, mit Namen; der Tooltip nennt die Nummer (wie in „B3 · S. 1“).
+const binderTip = b => [`Binder ${b}`, b === SPECIAL_BINDER ? t("specialsTip") : isOtherBinder(b) ? t("trainersTip") : ""].filter(Boolean).join(": ");
+const binderTabsHtml = () => BINDERS.map(b => `<button class="tab" data-binder="${b}" role="tab" title="${esc(binderTip(b))}">${esc(binderName(b))}</button>`).join("");
 
 function bindBinderEvents() {
   $("#binderBar .tabs").innerHTML = binderTabsHtml();
@@ -187,6 +197,7 @@ function bindBinderEvents() {
     if (more) return slotMenu.n === n ? closeSlotMenu() : openSlotMenu(n, more);
     if (e.target.closest(".rbtn, .vis")) openPicker(n);
   });
+  onClosest("#grid", "click", ".slot[data-add]", openAdd);
   onClosest("#slotMenu", "click", "button", slotMenuClick);
   on(document, "click", e => { if (!e.target.closest("#slotMenu, .more")) closeSlotMenu(); });
   on(window, "resize", closeSlotMenu);

@@ -4,7 +4,6 @@ const LAYOUT = {
   slotsPerPage: 16,  // 4 x 4
   cols: 4,
   binder1Size: 640,  // Binder 1: #1 bis #640, danach Binder 2
-  trainerBinderSize: 640,  // Trainerkarten: Binder 4, ist er voll, geht es in Binder 5 weiter usw.
 };
 
 // Browser-Speicher (localStorage) und Online-Speicher (nur claude.ai)
