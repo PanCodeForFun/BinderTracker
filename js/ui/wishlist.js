@@ -154,6 +154,27 @@ function toggleWish(id) {
   else renderWishView();
 }
 
+// ---------- Vollansicht: Karte direkt in den Binder legen ----------
+// Ziel-Slots einer Karte, Pokédex (Binder 1/2) zuerst, dann Sonderbinder.
+const targetSlots = c => [...c.ns].sort((a, b) => slotOrder(a) - slotOrder(b));
+
+function placeButtons(c) {
+  return `<div class="zoom-actions">${targetSlots(c).map(n => owned(n)?.card === c.id
+    ? `<span class="zoom-have">✓ ${t("inBinderAt", { w: whereText(n) })}</span>`
+    : `<button class="ghost primary" data-place="${n}" data-place-card="${esc(c.id)}">${t("placeCard")} <small>${esc(whereText(n))}</small></button>`).join("")}</div>`;
+}
+
+// Legt die Karte als Besitz in Slot n und nimmt sie von der Wunschliste (ein Rückgängig-Schritt).
+// Liegt dort schon eine seltenere Karte, wird erst gefragt. Notiz und Kartensprache des Slots bleiben.
+function placeCard(n, id) {
+  const c = findCard(n, id), before = owned(n), prev = RARITY[before?.r];
+  if (!c) return;
+  const entry = { r: c.cat, card: c.id, note: before?.note || "" };
+  const go = () => { const job = placeEntry(n, entry); toast(t("placed", { x: c.name, w: whereText(n) })); return job; };
+  if (prev && prev.rank > RARITY[entry.r].rank) askConfirm(t("placeRarer", { a: prev.label, b: RARITY[entry.r].label }), go, t("replace"));
+  else go();
+}
+
 function bindWishEvents() {
   $("#wlSort").innerHTML = optionsHtml(Object.entries(SORTS).map(([k, s]) => [k, t(s.label)]));
   $("#wlSet").innerHTML = optionsHtml([["", t("allBoosters")], ...allSets().map(i => [String(i), `${setName(i)} (${SETS[i].year})`])]);
@@ -165,6 +186,11 @@ function bindWishEvents() {
   onClosest("#wlGrid", "click", "[data-star]", b => toggleWish(b.closest(".wl-card").dataset.card));
   onClosest("#wlSide", "click", "[data-unwish]", b => toggleWish(b.dataset.unwish));
   // Klick aufs Kartenbild: Vollansicht
-  onClosest("#wishView", "click", "[data-card] .cardbox", box => openZoom(cardById(box.closest("[data-card]").dataset.card)));
+  onClosest("#wishView", "click", "[data-card] .cardbox", box => {
+    const c = cardById(box.closest("[data-card]").dataset.card);
+    openZoom(c, c ? placeButtons(c) : "");
+  });
+  // Klick auf „In Binder legen“ (die Vollansicht schließt sich dabei, siehe bindMainEvents)
+  onClosest("#zoom", "click", "[data-place]", b => placeCard(+b.dataset.place, b.dataset.placeCard));
   onEach(".wtab", b => { wl.tab = b.dataset.wtab; renderWishView(); scrollTo({ top: 0 }); });
 }

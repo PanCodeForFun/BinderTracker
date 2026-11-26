@@ -80,15 +80,21 @@ function renderPicker() {
   }).join("");
 }
 
-// Eintrag für den offenen Slot speichern (null = leeren). Die Kartensprache bleibt beim Kartenwechsel,
-// eine erfüllte Wunschkarte fliegt von der Wunschliste (beides ein Rückgängig-Schritt).
+// Eintrag für den offenen Slot speichern (null = leeren), siehe placeEntry.
 async function commit(entry) {
-  const n = pick.n, before = owned(n), prev = RARITY[before?.r];
+  const n = pick.n;
+  closePicker();
+  await placeEntry(n, entry);
+}
+
+// Eintrag für Slot n speichern (null = leeren). Die Kartensprache bleibt beim Kartenwechsel,
+// eine erfüllte Wunschkarte fliegt von der Wunschliste (beides ein Rückgängig-Schritt).
+async function placeEntry(n, entry) {
+  const before = owned(n), prev = RARITY[before?.r];
   if (entry && before?.lang && !entry.lang) entry = { ...entry, lang: before.lang };
   // Binder 4: neue Karten kommen hinten dran, beim Kartenwechsel bleibt der Platz
   if (entry && TRAINER_INDEX.has(n)) entry = { ...entry, at: before?.at || Date.now() };
   if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(t("rarerHint", { a: prev.label, b: RARITY[entry.r].label }));
-  closePicker();
   let done;
   asStep("", () => {
     if (entry?.card && isWished(entry.card)) saved(setWish(entry.card, false));
