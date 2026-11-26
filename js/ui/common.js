@@ -32,8 +32,9 @@ function setStatus(kind, text) {
 // Wartet auf das Online-Speichern. Ein Fehler erscheint nur in der Statusanzeige.
 const saved = job => Promise.resolve(job).catch(() => setStatus("err", t("saveFailed")));
 
-function askConfirm(msg, onYes) {
+function askConfirm(msg, onYes, yes = t("load")) {
   $("#confirmText").textContent = msg;
+  $("#confirmYes").textContent = yes;
   $("#confirm").hidden = false;
   $("#confirmYes").onclick = () => { $("#confirm").hidden = true; onYes(); };
   $("#confirmNo").onclick = () => ($("#confirm").hidden = true);
@@ -67,10 +68,11 @@ function cardImage(card, extra = "", lang) {
 }
 
 // ---------- Vollansicht einer Karte (×, Escape, Zurück oder Klick daneben schließt) ----------
-function openZoom(card) {
+// extra: HTML unter der Bildunterschrift (z. B. „In Binder legen“ in der Wunschliste).
+function openZoom(card, extra = "") {
   if (!card) return;
   $("#zoomBox").innerHTML = imgChain([...card.big, ...card.srcs], `alt="${esc(card.name)}"`) +
-    `<figcaption><b>${esc(card.name)}</b> · ${esc(card.set)} · ${esc(card.num)}/${esc(card.total)} · <span id="zoomPrice"></span></figcaption>`;
+    `<figcaption><b>${esc(card.name)}</b> · ${esc(card.set)} · ${esc(card.num)}/${esc(card.total)} · <span id="zoomPrice"></span></figcaption>${extra}`;
   $("#zoomBox img").loading = "eager";
   showPrice($("#zoomPrice"), card);
   $("#zoom").hidden = false;
