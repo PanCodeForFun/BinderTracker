@@ -23,9 +23,13 @@ const STRINGS = {
     prevPage: "Vorherige Seite", nextPage: "Nächste Seite", close: "Schließen",
     note: "Notiz", notePh: "z. B. Zustand, gekauft bei …", cardLang: "Sprache der Karte", moreTip: "Mehr zu dieser Karte", clearSlot: "Slot leeren",
     noDesign: "Ohne Design", noDesignRarity: "Seltenheit ohne Design", load: "Laden", cancel: "Abbrechen",
-    freeSlot: "frei für neue Pokémon", free: "frei", pickCard: "+ Karte wählen", specials: "Sonderkarten", specialsTip: "Sonderkarten: Regionalformen, Megas, Tag Teams (Zweitslots, freiwillig)",
-    trainers: "Trainer", trainersTip: "Trainerkarten: Items, Ausrüstung, Unterstützer, Stadien (nach Erscheinen)",
-    pageTitle: "Binder {b} · Seite {p}", range: "{a} bis {b}", inBinder: "{a} / {b} im Binder", of: "von {n}",
+    freeSlot: "frei für neue Pokémon", free: "frei", pickCard: "+ Karte wählen", specialsTip: "Regionalformen, Megas, Tag Teams (Zweitslots, freiwillig)",
+    trainersTip: "Trainer, Items, Stadien … in der Reihenfolge, in der sie dazukamen",
+    binderNames: ["Pokédex 1", "Pokédex 2", "Regionalformen & Sondereditionen", "Sonstiges"],
+    otherRange: "Karten in der Reihenfolge, in der sie dazukamen", otherCount: "{n} Karten im Binder",
+    addCard: "+ Karte hinzufügen", addSub: "Trainer, Items, Stadien …", addHint: "Namen suchen, dann die Karte wählen. Sie kommt hinten in den Binder.",
+    addPh: "Kartenname (Deutsch oder Englisch)…", addEmpty: "Tippe einen Namen, z. B. Professor, Pokéball, Arena …",
+    pageTitle: "{b} · Seite {p}", range: "{a} bis {b}", inBinder: "{a} / {b} im Binder", of: "von {n}",
     cardsKnown: "{n} Karten bekannt", noCards: "Keine Karten bekannt. Nutze „Ohne Design“.",
     noRarity: "ohne Angabe", reverseTip: "Diese Karte als Reverse Holo",
     rarerHint: "Hinweis: {a} war seltener als {b}.", saveFailed: "Online-Speichern fehlgeschlagen",
@@ -88,9 +92,13 @@ const STRINGS = {
     prevPage: "Previous page", nextPage: "Next page", close: "Close",
     note: "Note", notePh: "e.g. condition, bought at …", cardLang: "Card language", moreTip: "More for this card", clearSlot: "Clear slot",
     noDesign: "No design", noDesignRarity: "Rarity without design", load: "Load", cancel: "Cancel",
-    freeSlot: "free for new Pokémon", free: "free", pickCard: "+ Choose card", specials: "Special cards", specialsTip: "Special cards: regional forms, Megas, tag teams (optional second slots)",
-    trainers: "Trainers", trainersTip: "Trainer cards: items, tools, supporters, stadiums (by release)",
-    pageTitle: "Binder {b} · Page {p}", range: "{a} to {b}", inBinder: "{a} / {b} in binder", of: "of {n}",
+    freeSlot: "free for new Pokémon", free: "free", pickCard: "+ Choose card", specialsTip: "Regional forms, Megas, tag teams (optional second slots)",
+    trainersTip: "Trainers, items, stadiums … in the order you got them",
+    binderNames: ["Pokédex 1", "Pokédex 2", "Regional forms & special editions", "Other"],
+    otherRange: "Cards in the order you got them", otherCount: "{n} cards in binder",
+    addCard: "+ Add card", addSub: "Trainers, items, stadiums …", addHint: "Search a name, then pick the card. It goes to the end of the binder.",
+    addPh: "Card name (German or English)…", addEmpty: "Type a name, e.g. Professor, Poké Ball, Stadium …",
+    pageTitle: "{b} · Page {p}", range: "{a} to {b}", inBinder: "{a} / {b} in binder", of: "of {n}",
     cardsKnown: "{n} cards known", noCards: "No cards known. Use “No design”.",
     noRarity: "not specified", reverseTip: "This card as Reverse Holo",
     rarerHint: "Note: {a} was rarer than {b}.", saveFailed: "Online save failed",
@@ -143,7 +151,7 @@ const STRINGS = {
   },
 };
 
-// t("pageTitle", { b: 1, p: 3 }) -> "Binder 1 · Seite 3"
+// t("pageTitle", { b: "Pokédex 1", p: 3 }) -> "Pokédex 1 · Seite 3"
 const t = (key, vars = {}) => {
   const s = STRINGS[LANG][key] ?? STRINGS.de[key] ?? key;
   return typeof s === "string" ? s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "") : s;

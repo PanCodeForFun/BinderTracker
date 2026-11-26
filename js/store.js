@@ -6,6 +6,7 @@
 // { "6": { r: "fullart", card: "sv3-215", note: "", lang: "ja", up: true } }
 // lang (Sprache der Karte) fehlt bei deutschen Karten.
 // up: true = Upgrade gesucht, nur gespeichert ab Stufe UPGRADE_BELOW (darunter gilt es automatisch).
+// at: Zeitpunkt des Eintragens (ms), nur in Binder 4 „Sonstiges“, legt dort die Reihenfolge fest.
 let collection = {};
 const collectionDocs = new LiveDocs(DB_COLLECTION);
 
@@ -30,6 +31,7 @@ function cleanEntry(n, v) {
   const e = { r: v.r, card: typeof v.card === "string" ? v.card : "", note: String(v.note || "") };
   if (CARD_LANG[v.lang] && v.lang !== DEFAULT_CARD_LANG) e.lang = v.lang;
   if (v.up === true && !autoUpgrade(e)) e.up = true;
+  if (TRAINER_INDEX.has(+n) && Number(v.at) > 0) e.at = Number(v.at);
   return e;
 }
 // [[n, Eintrag], …] -> { n: Eintrag } ohne ungültige Einträge

@@ -15,7 +15,7 @@ function renderStats() {
   const entries = activeEntries();
   const counts = countBy(entries, e => RARITY[e.r].tier);
   const max = Math.max(1, ...Object.values(counts));
-  const binderTile = b => progressTile(`Binder ${b}`, ownedCount(p => inBinder(b, p.n)), slotsInBinder(b).length);
+  const binderTile = b => progressTile(binderName(b), ownedCount(p => inBinder(b, p.n)), isOtherBinder(b) ? TRAINERS.length : slotsInBinder(b).length);
   setCollectionBody(`
     <div class="stat-tiles">${progressTile(t("total"), ownedCount(p => !p.special), DEX.length)}${BINDERS.map(binderTile).join("")}</div>
     <h3>${t("byRarity")}</h3>
@@ -62,7 +62,7 @@ function renderValue() {
 
   setCollectionBody(`
     <div class="value-head"><p class="sub">${t("valueHint")}</p><div class="value-btn">${btn}</div></div>
-    <div class="stat-tiles">${tile(t("total"), priced)}${BINDERS.map(b => tile(`Binder ${b}`, priced.filter(x => inBinder(b, x.n)))).join("")}</div>
+    <div class="stat-tiles">${tile(t("total"), priced)}${BINDERS.map(b => tile(binderName(b), priced.filter(x => inBinder(b, x.n)))).join("")}</div>
     <p class="sub">${t("valueCount", { a: priced.length, b: items.length })}${isFinite(oldest) ? " " + t("valueAsOf", { d: new Date(oldest).toLocaleDateString(LANG) }) : ""}${
       noDesign ? " " + t("valueNoDesign", { n: noDesign }) : ""}</p>
     ${top.length ? `<h3>${t("valueTop")}</h3><ol class="top-cards">${top.map(x => `

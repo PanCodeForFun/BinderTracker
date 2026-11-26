@@ -424,3 +424,14 @@ main { padding-block: 16px 40px; max-width: 1180px; margin: 0 auto; }
 .match-none { grid-column: 1 / -1; text-align: center; padding: 40px 0; }
 .spr-team { display: inline-flex; justify-content: center; }
 .spr-team .spr { width: 64px; height: 64px; margin: 0 -8px; }
+
+/* Binder 4 „Sonstiges“: Platz zum Hinzufügen und Namenssuche im Kartenfenster */
+.slot.add { cursor: pointer; border-style: dashed; }
+.slot.add .rbtn { font-weight: 600; }
+.picker.adding .modal-foot { display: none; }
+.picker.adding .designs { display: block; }
+.add-query { width: 100%; padding: 10px 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--line, #444); background: var(--bg); color: inherit; font: inherit; }
+.add-hits { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.add-hits button { width: 100%; text-align: left; padding: 8px 12px; border-radius: 8px; border: 1px solid transparent; background: var(--bg); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.add-hits button:hover, .add-hits button:focus-visible { border-color: var(--accent, currentColor); }
+.add-have { margin-left: auto; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--r); color: var(--rInk); }

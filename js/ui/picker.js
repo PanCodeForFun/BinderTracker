@@ -1,11 +1,20 @@
 // Kartenauswahl (Fenster über dem Binder): alle Karten eines Pokémon nach Stufe, ★ für die
 // Wunschliste, „Reverse“ für Reverse Holo, „Ohne Design“ und „Slot leeren“.
 
-const pick = { n: null };  // Dex-Nummer, für die das Fenster offen ist
+const pick = { n: null, adding: false };  // Dex-Nummer, für die das Fenster offen ist; adding: Karte für Binder 4 suchen
+
+function showPicker() {
+  $("#picker").hidden = false;
+  $("#modalBack").hidden = false;
+  document.body.classList.add("modal-open");
+  $("#designs").scrollTop = 0;
+}
 
 function openPicker(n) {
   const p = BY_N.get(n), e = owned(n);
   pick.n = n;
+  pick.adding = false;
+  $("#picker").classList.remove("adding");
   $("#pickerTitle").textContent = `${pad(n)} ${p.name}`;
   $("#pickerSub").textContent = `${p.alt !== p.name ? p.alt + " · " : ""}${t("cardsKnown", { n: cardsFor(n).length })}`;
   $("#pickerSprite").src = spriteUrl(n);
@@ -15,17 +24,40 @@ function openPicker(n) {
   $("#pickerPrice").textContent = "";
   if (card) showPrice($("#pickerPrice"), card, e.r === "reverse");
   renderPicker();
-  $("#picker").hidden = false;
-  $("#modalBack").hidden = false;
-  document.body.classList.add("modal-open");
-  $("#designs").scrollTop = 0;
+  showPicker();
+}
+
+// ---------- Binder 4 „Sonstiges“: Karte hinzufügen ----------
+// Erst den Namen suchen (Trainer, Items, Stadien …), dann wie gewohnt die Karte wählen.
+function openAdd() {
+  Object.assign(pick, { n: null, adding: true });
+  $("#picker").classList.add("adding");
+  $("#pickerTitle").textContent = t("addCard");
+  $("#pickerSub").textContent = t("addHint");
+  $("#pickerSprite").src = TRAINER_ICON;
+  $("#pickerPrice").textContent = "";
+  $("#designs").innerHTML = `<input id="addQuery" class="add-query" type="search" placeholder="${esc(t("addPh"))}" autocomplete="off"><ul id="addHits" class="add-hits"></ul>`;
+  renderAddHits();
+  showPicker();
+  $("#addQuery").focus();
+}
+
+function renderAddHits() {
+  const k = norm($("#addQuery").value);
+  const hits = k ? TRAINERS.filter(p => norm(p.de).includes(k) || norm(p.en).includes(k)).slice(0, 60) : [];
+  $("#addHits").innerHTML = !k ? `<li class="sub">${t("addEmpty")}</li>` : !hits.length ? `<li class="sub">${t("nothingFound")}</li>` : hits.map(p => {
+    const r = RARITY[owned(p.n)?.r], type = TRAINER_TYPE[p.trainerType];
+    return `<li><button data-n="${p.n}" ${colorStyle(r)}><b>${esc(p.name)}</b> <span class="sub">${p.alt !== p.name ? esc(p.alt) + " · " : ""}${
+      type ? esc(localName(type.de, type.en)) + " · " : ""}${t("cardsKnown", { n: cardsFor(p.n).length })}</span>${
+      r ? `<span class="add-have">${esc(r.label)} · ${t("inBinderTag")}</span>` : ""}</button></li>`;
+  }).join("");
 }
 
 function closePicker() {
   $("#picker").hidden = true;
   $("#modalBack").hidden = true;
   document.body.classList.remove("modal-open");
-  pick.n = null;
+  Object.assign(pick, { n: null, adding: false });
 }
 
 // Alle Karten, gruppiert nach Stufe (cardsFor ist schon so sortiert).
@@ -53,6 +85,8 @@ function renderPicker() {
 async function commit(entry) {
   const n = pick.n, before = owned(n), prev = RARITY[before?.r];
   if (entry && before?.lang && !entry.lang) entry = { ...entry, lang: before.lang };
+  // Binder 4: neue Karten kommen hinten dran, beim Kartenwechsel bleibt der Platz
+  if (entry && TRAINER_INDEX.has(n)) entry = { ...entry, at: before?.at || Date.now() };
   if (entry && prev && RARITY[entry.r].rank < prev.rank) toast(t("rarerHint", { a: prev.label, b: RARITY[entry.r].label }));
   closePicker();
   let done;
@@ -74,6 +108,9 @@ function choose(cardId, asReverse) {
 
 function bindPickerEvents() {
   $("#noDesignRarity").innerHTML = optionsHtml(RARITIES.map(r => [r.id, r.label]));
+  on("#designs", "input", e => { if (e.target.id === "addQuery") renderAddHits(); });
+  on("#designs", "keydown", e => { if (e.target.id === "addQuery" && e.key === "Enter") $("#addHits button")?.click(); });
+  onClosest("#designs", "click", "#addHits button[data-n]", b => openPicker(+b.dataset.n));
   onClosest("#designs", "click", ".design", (d, e) => {
     if (!e.target.closest("[data-star]")) return choose(d.dataset.card, !!e.target.closest("[data-rev]"));
     saved(setWish(d.dataset.card, !isWished(d.dataset.card)));

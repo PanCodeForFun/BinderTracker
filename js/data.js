@@ -56,7 +56,7 @@ const SPECIAL_BY_N = new Map(SPECIALS.map(p => [p.n, p]));
 const SPECIALS_OF = new Map();  // Dex-Nummer -> ihre Sonderkarten-Slots (für die Suche)
 for (const p of SPECIALS) for (const m of p.members) SPECIALS_OF.set(m, [...(SPECIALS_OF.get(m) || []), p]);
 
-// ---------- Trainerkarten (Binder 4 und folgende) ----------
+// ---------- Trainerkarten (Binder 4 „Sonstiges“) ----------
 // Ein Slot pro Kartenname (Varianten wie „Professor's Research (Professor Oak)“ zusammen), in der
 // Reihenfolge des ersten Erscheinens. Neue Karten hängen hinten an. TCG_TRAINERS ist nach Set sortiert.
 const trainerName = name => (name || "").replace(/\s*\(.*\)$/, "");
@@ -199,35 +199,57 @@ function searchCards(query) {
 }
 
 // ---------- Binder ----------
-// Binder 1: #1 bis #640, Binder 2: ab #641 (wächst mit neuen Pokémon, dahinter frei),
-// Binder 3: Sonderkarten (Zweitslots, siehe oben), ab Binder 4: Trainerkarten (je trainerBinderSize Slots).
-const SPECIAL_BINDER = 3, TRAINER_BINDER = 4;
-const TRAINER_SIZE = LAYOUT.trainerBinderSize;
-const BINDERS = [1, 2, SPECIAL_BINDER, ...range(Math.max(1, Math.ceil(TRAINERS.length / TRAINER_SIZE)), TRAINER_BINDER)];
+// Pokédex 1: #1 bis #640, Pokédex 2: ab #641 (wächst mit neuen Pokémon, dahinter frei),
+// Binder 3: Regionalformen und Sondereditionen (Zweitslots, siehe oben),
+// Binder 4 „Sonstiges“: Trainer, Items, Stadien … ohne feste Plätze, in der Reihenfolge, in der sie dazukamen.
+const SPECIAL_BINDER = 3, OTHER_BINDER = 4;
+const BINDERS = [1, 2, SPECIAL_BINDER, OTHER_BINDER];
 const SPECIAL_INDEX = new Map(SPECIALS.map((p, i) => [p.n, i]));
-const isTrainerBinder = binder => binder >= TRAINER_BINDER;
-const binderOffset = binder => (binder === 2 ? LAYOUT.binder1Size : isTrainerBinder(binder) ? (binder - TRAINER_BINDER) * TRAINER_SIZE : 0);
+const isOtherBinder = binder => binder === OTHER_BINDER;
+const ADD_SLOT = -1;  // Platz „+ Karte hinzufügen“ hinter der letzten Karte in Binder 4
+const binderName = b => t("binderNames")[b - 1] || `Binder ${b}`;
+
+// Eingetragene Karten in Binder 4: nach Zeitpunkt des Eintragens (at), ältere Einträge ohne Zeit zuerst.
+const otherOrder = { key: null, list: [], index: new Map() };
+function otherSlots() {
+  const have = TRAINERS.filter(p => collection[p.n]);
+  const key = have.map(p => `${p.n}:${collection[p.n].at || 0}`).join();
+  if (key !== otherOrder.key) {
+    const at = p => collection[p.n].at || 0;
+    const list = have.sort((a, b) => at(a) - at(b) || TRAINER_INDEX.get(a.n) - TRAINER_INDEX.get(b.n)).map(p => p.n);
+    Object.assign(otherOrder, { key, list, index: new Map(list.map((n, i) => [n, i])) });
+  }
+  return otherOrder;
+}
+// Steht der Slot im Binder? Nicht eingetragene Trainer haben (noch) keinen Platz.
+const isPlaced = n => !TRAINER_INDEX.has(n) || !!collection[n];
+
+const binderOffset = binder => (binder === 2 ? LAYOUT.binder1Size : 0);
 function binderOf(n) {
   if (SPECIAL_INDEX.has(n)) return SPECIAL_BINDER;
-  if (TRAINER_INDEX.has(n)) return TRAINER_BINDER + Math.floor(TRAINER_INDEX.get(n) / TRAINER_SIZE);
+  if (TRAINER_INDEX.has(n)) return OTHER_BINDER;
   return n <= LAYOUT.binder1Size ? 1 : 2;
 }
 const inBinder = (binder, n) => binderOf(n) === binder;
-const slotsInBinder = binder => SLOTS.filter(p => inBinder(binder, p.n));
+const slotsInBinder = binder => SLOTS.filter(p => inBinder(binder, p.n) && isPlaced(p.n));
 function binderSize(binder) {
   if (binder === SPECIAL_BINDER) return SPECIALS.length;
-  if (isTrainerBinder(binder)) return Math.min(TRAINER_SIZE, TRAINERS.length - binderOffset(binder));
+  if (isOtherBinder(binder)) return otherSlots().list.length + 1;  // + Platz zum Hinzufügen
   return binder === 1 ? Math.min(MAX_N, LAYOUT.binder1Size) : MAX_N - LAYOUT.binder1Size;
 }
 // Nummer am Platz i (ab 0) eines Binders: Dex-Nummer (hinter dem Pokédex frei für neue Pokémon),
-// Sonderkarte, Trainer oder null (leer).
+// Sonderkarte, Karte aus Binder 4, ADD_SLOT oder null (leer).
 function slotAt(binder, i) {
   if (binder === SPECIAL_BINDER) return SPECIALS[i]?.n ?? null;
-  if (isTrainerBinder(binder)) return i < TRAINER_SIZE ? TRAINERS[binderOffset(binder) + i]?.n ?? null : null;
+  if (isOtherBinder(binder)) { const { list } = otherSlots(); return list[i] ?? (i === list.length ? ADD_SLOT : null); }
   return binderOffset(binder) + i + 1;
 }
-// Platz eines Slots in seinem Binder (ab 0)
-const indexInBinder = n => SPECIAL_INDEX.get(n) ?? (TRAINER_INDEX.has(n) ? TRAINER_INDEX.get(n) : n - 1) - binderOffset(binderOf(n));
+// Platz eines Slots in seinem Binder (ab 0). Nicht eingetragene Trainer: der Platz zum Hinzufügen.
+function indexInBinder(n) {
+  if (SPECIAL_INDEX.has(n)) return SPECIAL_INDEX.get(n);
+  if (TRAINER_INDEX.has(n)) { const o = otherSlots(); return o.index.get(n) ?? o.list.length; }
+  return n - 1 - binderOffset(binderOf(n));
+}
 
 // Position eines Slots: Binder, Seite, Reihe und Spalte (alles ab 1).
 function locate(n) {
